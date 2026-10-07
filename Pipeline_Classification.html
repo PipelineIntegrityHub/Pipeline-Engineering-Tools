@@ -1,0 +1,526 @@
+<title>Pipeline Classifier</title>
+<style>
+/* Layout: calculator (inputs | result) on top, regulatory tree + node detail below. Light-only by user preference; system fonts, no external deps. */
+:root{
+  --bg:#eef2f1; --panel:#ffffff; --ink:#18211f; --muted:#56635f; --line:#d3dbd8; --soft:#f5f8f7;
+  --gas:#0d6656; --gas-soft:#e2f1ed; --liq:#9a4513; --liq-soft:#f8ebe1;
+  --mark:#e2b21b; --mark-soft:#fdf5d8; --ok:#2f6b1f; --warn:#8a5a00; --bad:#a12a2a;
+  --f-display:"Iowan Old Style","Palatino Linotype",Palatino,Charter,Georgia,serif;
+  --f-body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --f-mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:flex;flex-direction:column;gap:22px}
+header h1{font-family:var(--f-display);font-weight:600;font-size:clamp(26px,4vw,34px);margin:0;letter-spacing:-.01em;text-wrap:balance}
+header p{margin:4px 0 0;color:var(--muted);max-width:70ch}
+.cfr{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+h2{font-family:var(--f-display);font-weight:600;font-size:21px;margin:0}
+h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0;font-weight:600}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px}
+.calc{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:860px){.calc,.ref{grid-template-columns:minmax(0,1fr)!important}}
+form{display:flex;flex-direction:column;gap:16px}
+fieldset{border:0;border-top:1px solid var(--line);margin:0;padding:12px 0 0;display:flex;flex-direction:column;gap:10px;min-width:0}
+fieldset:first-of-type{border-top:0;padding-top:0}
+legend{padding:0 0 6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+label.f{display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--muted);min-width:0}
+input[type=number],select{font:inherit;font-family:var(--f-mono);font-size:14px;color:var(--ink);background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:7px 8px;width:100%}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--mark);outline-offset:1px}
+label.chk{display:flex;gap:8px;align-items:flex-start;font-size:14px;cursor:pointer}
+label.chk input{margin-top:3px;accent-color:var(--gas)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;background:var(--soft);flex-wrap:wrap}
+.seg button{font:inherit;font-size:14px;border:0;background:transparent;padding:7px 14px;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed=true]{background:var(--ink);color:#fff}
+.segs{display:flex;gap:10px;flex-wrap:wrap}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.ex{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.ex button{font:inherit;font-size:12px;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:4px 10px;cursor:pointer;color:var(--ink)}
+.ex button:hover{border-color:var(--ink)}
+.result{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);display:flex;flex-direction:column;gap:14px}
+.verdict{border:1px solid var(--line);border-radius:10px;padding:16px;background:var(--soft)}
+.verdict.gas{background:var(--gas-soft);border-color:#b5dbd1}
+.verdict.liq{background:var(--liq-soft);border-color:#ecc9ae}
+.verdict.err{background:#fbeaea;border-color:#efc3c3}
+.tag{display:inline-block;font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:4px;background:var(--panel);border:1px solid var(--line);color:var(--muted)}
+.vt{font-family:var(--f-display);font-size:28px;font-weight:600;margin:6px 0 2px;line-height:1.15;text-wrap:balance}
+.gas .vt{color:var(--gas)} .liq .vt{color:var(--liq)} .err .vt{color:var(--bad)}
+.vs{margin:0;color:var(--ink)}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+.metric{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.metric b{display:block;font-family:var(--f-mono);font-size:17px;font-variant-numeric:tabular-nums;font-weight:600}
+.metric span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.metric.flag b{color:var(--warn)}
+ol.trace,ul.reqs{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:5px;font-size:14px}
+ol.trace li::marker{font-family:var(--f-mono);color:var(--muted)}
+ul.reqs li::marker{color:var(--mark)}
+.note{font-size:13px;color:var(--warn);background:var(--mark-soft);border:1px solid #f0dc95;border-radius:8px;padding:8px 10px;margin:0}
+.chartWrap{overflow-x:auto;position:relative;margin-inline:-4px;padding:4px}
+.chart{position:relative;min-width:920px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));column-gap:26px;row-gap:36px;padding:4px 4px 18px}
+.wires{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
+.wires path{fill:none;stroke:#b9c4c0;stroke-width:1.5}
+.wires path.on{stroke:var(--mark);stroke-width:3}
+.nd{font:inherit;text-align:left;display:flex;flex-direction:column;gap:1px;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:8px 12px;cursor:pointer;color:var(--ink);position:relative;z-index:1;width:100%}
+.nd .n{font-weight:600;font-size:14px}
+.nd .s{font-size:12px;color:var(--muted);font-family:var(--f-mono)}
+.nd:hover{border-color:var(--ink)}
+.nd.top{align-items:center;text-align:center;width:220px;justify-self:center}
+.nd.root{background:var(--ink);color:#fff;border-color:var(--ink)} .nd.root .s{color:#c9d3d0}
+.nd.k-gas.top{background:var(--gas);border-color:var(--gas);color:#fff} .nd.k-gas.top .s{color:#cfe8e1}
+.nd.k-liq.top{background:var(--liq);border-color:var(--liq);color:#fff} .nd.k-liq.top .s{color:#f3d6c3}
+.nd.fn.k-gas{background:var(--gas-soft);border-color:#b5dbd1}
+.nd.fn.k-liq{background:var(--liq-soft);border-color:#ecc9ae}
+.nd.onpath{box-shadow:0 0 0 3px var(--mark)}
+.nd.sel{outline:2px solid var(--ink);outline-offset:3px}
+.leaves{display:flex;flex-direction:column;gap:8px;padding-left:24px;min-width:0}
+.pop{position:absolute;z-index:5;width:300px;background:var(--panel);border:1px solid var(--ink);border-radius:10px;padding:14px 16px;box-shadow:0 10px 28px rgba(20,32,29,.18);display:flex;flex-direction:column;gap:8px}
+.pop h4{font-family:var(--f-display);font-size:20px;margin:0;font-weight:600;padding-right:24px}
+.pop p{margin:0;font-size:14px}
+.pop .x{position:absolute;top:8px;right:8px;border:0;background:transparent;font:inherit;font-size:18px;line-height:1;cursor:pointer;color:var(--muted);padding:4px 6px;border-radius:4px}
+.pop .x:hover{color:var(--ink);background:var(--soft)}
+.crumb{font-family:var(--f-mono);font-size:12px;color:var(--muted);margin:0 0 12px}
+.crumb b{color:var(--ink);font-weight:600}
+.linkbtn{font:inherit;font-size:13px;border:1px solid var(--ink);background:var(--panel);color:var(--ink);border-radius:6px;padding:5px 10px;cursor:pointer;align-self:flex-start}
+.linkbtn:hover{background:var(--ink);color:#fff}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;vertical-align:-2px;margin-right:5px}
+a.cfrl{color:inherit;text-decoration:underline;text-decoration-style:dotted;text-decoration-color:var(--gas);text-underline-offset:2px;white-space:nowrap}
+a.cfrl:hover{color:var(--gas);text-decoration-style:solid}
+.liq a.cfrl{text-decoration-color:var(--liq)}
+footer{font-size:12px;color:var(--muted);max-width:90ch}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:no-preference){.nd,.ex button,.linkbtn{transition:border-color .15s,background .15s}}
+</style>
+
+<div class="wrap">
+<header>
+  <h1>Pipeline Classifier</h1>
+  <p>Enter pipe and location data to find the regulatory category of a segment under 49 CFR 192 (gas) or 195 (hazardous liquid). The result traces each rule it applied and lights up its path in the regulatory tree.</p>
+</header>
+
+<section class="panel calc" aria-label="Classification calculator">
+  <form id="frm" novalidate>
+    <div class="ex"><h3 style="margin-right:6px">Examples</h3>
+      <button type="button" data-ex="c">Gas gathering, rural</button>
+      <button type="button" data-ex="a">Gas gathering, Class 3</button>
+      <button type="button" data-ex="b">Low-stress, Class 2</button>
+      <button type="button" data-ex="tx">Gas transmission</button>
+      <button type="button" data-ex="rrg">Liquid rural gathering</button>
+    </div>
+
+    <fieldset>
+      <legend>System</legend>
+      <div class="segs">
+        <div class="seg" role="group" aria-label="Commodity">
+          <button type="button" data-k="com" data-v="gas" aria-pressed="true">Gas (192)</button>
+          <button type="button" data-k="com" data-v="liq" aria-pressed="false">Liquid (195)</button>
+        </div>
+        <div class="seg" role="group" aria-label="Function">
+          <button type="button" data-k="fn" data-v="gath" aria-pressed="true">Gathering</button>
+          <button type="button" data-k="fn" data-v="tx" aria-pressed="false">Transmission</button>
+        </div>
+      </div>
+      <p class="hint">Onshore only. Gathering start and end points come from API RP 80 with the limits in 192.8(a).</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Pipe</legend>
+      <div class="segs">
+        <div class="seg" role="group" aria-label="Material">
+          <button type="button" data-k="mat" data-v="steel" aria-pressed="true">Steel / metallic</button>
+          <button type="button" data-k="mat" data-v="nonmetal" aria-pressed="false">Non-metallic</button>
+        </div>
+      </div>
+      <div class="row">
+        <label class="f">Outside diameter (in)<input type="number" id="od" step="0.001" min="0"></label>
+        <label class="f" id="wtWrap">Wall thickness (in)<input type="number" id="wt" step="0.001" min="0"></label>
+        <label class="f">MAOP / MOP (psig)<input type="number" id="p" step="1" min="0"></label>
+      </div>
+      <div class="row" id="steelRow">
+        <label class="f">Grade (SMYS)
+          <select id="grade">
+            <option value="24000">Grade A (24,000)</option>
+            <option value="35000">Grade B (35,000)</option>
+            <option value="42000">X42 (42,000)</option>
+            <option value="46000">X46 (46,000)</option>
+            <option value="52000" selected>X52 (52,000)</option>
+            <option value="56000">X56 (56,000)</option>
+            <option value="60000">X60 (60,000)</option>
+            <option value="65000">X65 (65,000)</option>
+            <option value="70000">X70 (70,000)</option>
+            <option value="custom">Custom...</option>
+          </select></label>
+        <label class="f" id="smysWrap" hidden>SMYS (psi)<input type="number" id="smys" step="100" min="0"></label>
+      </div>
+      <label class="chk" id="unkWrap"><input type="checkbox" id="unk"> Stress level unknown (wall thickness or grade not documented)</label>
+    </fieldset>
+
+    <fieldset id="fsClass">
+      <legend>Class location (192.5)</legend>
+      <div class="segs">
+        <div class="seg" role="group" aria-label="Class input">
+          <button type="button" data-k="cm" data-v="count" aria-pressed="true">From building count</button>
+          <button type="button" data-k="cm" data-v="direct" aria-pressed="false">Enter class</button>
+        </div>
+      </div>
+      <div id="cmCount" class="row">
+        <label class="f">Buildings for human occupancy in densest 1-mile unit, 660 ft each side<input type="number" id="bldg" step="1" min="0"></label>
+      </div>
+      <div id="cmCount2" style="display:flex;flex-direction:column;gap:8px">
+        <label class="chk"><input type="checkbox" id="asm"> Building or small outside area within 100 yd occupied by 20+ persons, 5 days/week, 10 weeks in 12 months</label>
+        <label class="chk"><input type="checkbox" id="story"> Buildings with 4 or more stories above ground are prevalent</label>
+      </div>
+      <div id="cmDirect" class="row" hidden>
+        <label class="f">Class location<select id="clsD"><option>1</option><option>2</option><option>3</option><option>4</option></select></label>
+      </div>
+    </fieldset>
+
+    <fieldset id="fsTypeB">
+      <legend>Type B, Class 2 area tests (192.8 table 1)</legend>
+      <label class="chk"><input type="checkbox" id="b2a"> Operator applies Method (a): the whole Class 2 location is Area 2</label>
+      <div class="row">
+        <label class="f">Dwellings within 150 ft, any continuous 1 mile<input type="number" id="b2b" step="1" min="0"></label>
+        <label class="f">Dwellings within 150 ft, any continuous 1,000 ft<input type="number" id="b2c" step="1" min="0"></label>
+      </div>
+    </fieldset>
+
+    <fieldset id="fsTypeC">
+      <legend>Type C exemption (192.9(f))</legend>
+      <label class="chk"><input type="checkbox" id="cOcc"> Building for human occupancy or other impacted site inside the potential impact circle (0.73 factor) or class location unit</label>
+      <p class="hint">Impacted site: occupied building, outside area with 20+ persons 5 days/week for 10 weeks, or paved interstate, freeway, expressway or 4+ lane principal arterial.</p>
+    </fieldset>
+
+    <fieldset id="fsHCA">
+      <legend>HCA / MCA screening (192.903, 192.3)</legend>
+      <div class="row">
+        <label class="f">HCA method<select id="hcaM"><option value="1">Method 1 (class + PIR)</option><option value="2">Method 2 (PIR only)</option></select></label>
+        <label class="f">Buildings for human occupancy inside PIC<input type="number" id="picB" step="1" min="0"></label>
+      </div>
+      <label class="chk"><input type="checkbox" id="ident"> Identified site inside PIC (outside area, building with 20+ persons, or hard-to-evacuate facility)</label>
+      <label class="chk"><input type="checkbox" id="road"> Right-of-way of an interstate, freeway, expressway or 4+ lane principal arterial inside PIC</label>
+    </fieldset>
+
+    <fieldset id="fsLiqTx">
+      <legend>Consequence (195.450, 195.452)</legend>
+      <label class="chk"><input type="checkbox" id="ca"> Segment could affect an HCA (high or other populated area, drinking water or ecological USA, commercially navigable waterway)</label>
+    </fieldset>
+
+    <fieldset id="fsLiqG">
+      <legend>Gathering location (195.11)</legend>
+      <label class="chk"><input type="checkbox" id="rural" checked> Line is in a rural area</label>
+      <label class="chk"><input type="checkbox" id="usa"> In or within 1/4 mile of an unusually sensitive area (195.6)</label>
+    </fieldset>
+    <p class="hint" id="formErr" style="color:var(--bad)" hidden></p>
+  </form>
+
+  <div class="result" aria-live="polite">
+    <div id="verdict" class="verdict"></div>
+    <div class="metrics" id="metrics"></div>
+    <div><h3>How it was decided</h3><ol class="trace" id="trace" style="margin-top:8px"></ol></div>
+    <div><h3>What applies</h3><ul class="reqs" id="reqs" style="margin-top:8px"></ul></div>
+    <p class="note" id="note" hidden></p>
+    <button type="button" class="linkbtn" id="goTree">Show in tree</button>
+  </div>
+</section>
+
+<section class="panel" id="treeSec" aria-label="Regulatory tree">
+  <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px">
+    <h2>Regulatory tree</h2>
+    <div class="legend"><span><i style="background:var(--gas)"></i>Part 192 gas</span><span><i style="background:var(--liq)"></i>Part 195 liquid</span><span><i style="background:var(--mark)"></i>Current result</span></div>
+  </div>
+  <p class="crumb" id="crumb"></p>
+  <div class="chartWrap" id="chartWrap"><div class="chart" id="chart"></div></div>
+  <p class="hint">Click any box for its definition and CFR cites.</p>
+</section>
+
+<footer>Screening aid only. Classification must follow the operator's documented procedures and the current eCFR text; dwelling counts, class location units, PIR and could-affect analyses come from the operator's own surveys. Design pressure uses Barlow with E = T = 1. PIR = 0.69 &middot; D &middot; sqrt(P) ft (192.903); Type C circle uses 0.73 (192.9(f)).</footer>
+</div>
+
+<script>
+(function(){
+var $=function(id){return document.getElementById(id)};
+var EC="https://www.ecfr.gov/current/title-49/";
+function A(h,t){return '<a class="cfrl" href="'+h+'" target="_blank" rel="noopener" title="Open in eCFR">'+t+'</a>'}
+function lk(s,pt){
+  pt=pt==="liq"||pt==="195"?"195":"192";
+  s=s.replace(/(^|[^\d.,\w])((19[0-9])\.(\d+)((?:\([a-z0-9]+\))*))(?![\d%])/g,function(m,pre,all,p,sec,par){
+    return pre+A(EC+"section-"+p+"."+sec+(par?"#p-"+p+"."+sec+par:""),all)});
+  s=s.replace(/\b(Part|part)\s+(19[0-9])\b/g,function(m,w,p){return A(EC+"part-"+p,m)});
+  s=s.replace(/\b([Ss]ubpart)\s+([A-Z])\b/g,function(m,w,l){return A(EC+"part-"+pt+"/subpart-"+l,m)});
+  return s;
+}
+var st={com:"gas",fn:"gath",mat:"steel",cm:"count"};
+
+var T={
+ root:{n:"Pipelines",s:"49 CFR Parts 192 / 195",k:"",p:"PHMSA splits pipelines by commodity first, then by function. Gas lines fall under Part 192, hazardous liquid and CO2 lines under Part 195.",c:"49 CFR 190-199"},
+ gas:{n:"Gas",s:"Part 192",k:"gas",p:"Natural and other gas. Class location (192.5) drives design factor for transmission and the Type of a gathering line.",c:"192.1, 192.5"},
+ gtx:{n:"Transmission",s:"Class 1-4, HCA",k:"gas",p:"Design pressure uses the class-location design factor. HCAs (Method 1 or 2) need a subpart O integrity management program; Class 3, 4 and MCA segments get 192.710 assessments outside HCAs.",c:"192.105, 192.111, 192.903, 192.710"},
+ c1:{n:"Class 1",s:"10 or fewer bldgs, F 0.72",k:"gas",p:"Any 1-mile class location unit with 10 or fewer buildings intended for human occupancy (or an offshore area).",c:"192.5(b)(1), 192.111"},
+ c2:{n:"Class 2",s:"11-45 bldgs, F 0.60",k:"gas",p:"More than 10 but fewer than 46 buildings intended for human occupancy in the class location unit.",c:"192.5(b)(2), 192.111"},
+ c3:{n:"Class 3",s:"46+ bldgs, F 0.50",k:"gas",p:"46 or more buildings, or within 100 yards of a building or small well-defined outside area occupied by 20 or more persons 5 days a week for 10 weeks in any 12-month period.",c:"192.5(b)(3), 192.111"},
+ c4:{n:"Class 4",s:"4+ story bldgs, F 0.40",k:"gas",p:"Buildings with four or more stories above ground are prevalent.",c:"192.5(b)(4), 192.111"},
+ ghca:{n:"HCA",s:"Subpart O IMP",k:"gas",p:"Method 1: Class 3 or 4; or Class 1/2 with PIR over 660 ft and 20+ buildings in the PIC; or an identified site in the PIC. Method 2: 20+ buildings or an identified site in the PIC.",c:"192.903, 192.905, subpart O"},
+ gmca:{n:"MCA",s:"192.710 assessment",k:"gas",p:"Outside an HCA, a PIC containing 5+ buildings, an occupied site, or a 4+ lane interstate, freeway, expressway or principal arterial right-of-way. Drives 192.710 assessment for ILI-capable lines.",c:"192.3, 192.710"},
+ ggath:{n:"Gathering",s:"Type A, B, C, R",k:"gas",p:"Onshore gathering is typed by class location, hoop stress (or MAOP for non-metallic) and diameter. Subpart O IMP and HCAs do not apply to any gathering Type.",c:"192.8, 192.9"},
+ ta:{n:"Type A",s:"Class 2-4, 20%+ SMYS",k:"gas",p:"Metallic at 20% SMYS or more, or non-metallic above 125 psig, in a Class 2, 3 or 4 location. Follows transmission requirements except the 192.9(c) exclusions, which include subpart O, 192.607, 192.624, 192.710, 192.712 and 192.714.",c:"192.8(c), 192.9(c)"},
+ tb:{n:"Type B",s:"Class 3-4 (2), below 20%",k:"gas",p:"Metallic below 20% SMYS, or non-metallic at 125 psig or less, in Area 1 (Class 3 or 4) or Area 2 within a Class 2 location (Method a, b or c).",c:"192.8(c), 192.9(d)"},
+ tc:{n:"Type C",s:"Class 1, OD 8.625 in+",k:"gas",p:"Class 1, OD 8.625 in or more, and metallic at 20% SMYS or more (or above 125 psig if stress unknown), or non-metallic above 125 psig. Requirements tier at OD above 12.75 in; segments 16 in or smaller with no occupied building or impacted site in the 0.73 PIC are exempt from several items.",c:"192.8(c), 192.9(e), 192.9(f)"},
+ tr:{n:"Type R",s:"Reporting only",k:"gas",p:"All other onshore gathering in Class 1 and Class 2. Subject to Part 191 reporting; not a regulated onshore gathering line.",c:"192.8(c)(3), Part 191"},
+ liq:{n:"Liquid",s:"Part 195",k:"liq",p:"Hazardous liquids and CO2. Part 195 has no class locations; consequence is handled through HCA could-affect analysis.",c:"195.1, 195.2"},
+ ltx:{n:"Transmission",s:"HCA could-affect",k:"liq",p:"Design pressure uses a 0.72 design factor. Segments that could affect an HCA fall under the 195.452 IMP.",c:"195.106, 195.450, 195.452"},
+ lhca:{n:"Could-affect HCA",s:"195.452 IMP",k:"liq",p:"High population area, other populated area, drinking water or ecological USA, or commercially navigable waterway that a release could affect.",c:"195.450, 195.452"},
+ lnon:{n:"Outside HCA",s:"195.416(b) assessment",k:"liq",p:"Onshore segments outside could-affect HCAs still need periodic integrity assessment where the line can accommodate ILI.",c:"195.416"},
+ llow:{n:"Low-stress",s:"20% SMYS or less",k:"liq",p:"Operating at 20% SMYS or less. Check the 195.12 categories (rural, non-rural, USA proximity) for which requirements apply.",c:"195.2, 195.12"},
+ lgath:{n:"Gathering",s:"Rural, reporting",k:"liq",p:"Non-rural onshore gathering is subject to Part 195. Rural gathering is regulated only when it meets 195.11; other rural gathering is reporting-regulated only.",c:"195.1, 195.11, 195.15"},
+ lnr:{n:"Non-rural",s:"Part 195 applies",k:"liq",p:"Onshore gathering in a non-rural area is subject to Part 195.",c:"195.1"},
+ lrrg:{n:"Regulated rural",s:"195.11",k:"liq",p:"Rural, nominal 6-5/8 to 8-5/8 in, in or within 1/4 mile of a USA, and above 20% SMYS (or above 125 psig if stress unknown or non-steel). Limited O&M set in 195.11(b).",c:"195.11"},
+ lrpt:{n:"Reporting only",s:"Rural, other",k:"liq",p:"Rural gathering that does not meet 195.11 is subject to reporting requirements only.",c:"195.15"}
+};
+var LAY={gtx:["c1","c2","c3","c4","ghca","gmca"],ggath:["ta","tb","tc","tr"],ltx:["lhca","lnon","llow"],lgath:["lnr","lrrg","lrpt"]};
+var PARENT={gas:"root",liq:"root",gtx:"gas",ggath:"gas",ltx:"liq",lgath:"liq"};
+Object.keys(LAY).forEach(function(f){LAY[f].forEach(function(l){PARENT[l]=f})});
+var chart=$("chart");
+function mk(id,cls,css){var t=T[id],b=document.createElement("button");b.type="button";b.id="n-"+id;b.className="nd "+(t.k?"k-"+t.k+" ":"")+cls;if(css)b.style.cssText=css;
+  b.innerHTML='<span class="n">'+t.n+'</span><span class="s">'+t.s+'</span>';
+  b.addEventListener("click",function(e){e.stopPropagation();showPop(id)});return b}
+chart.appendChild(mk("root","top root","grid-column:1/-1;grid-row:1"));
+chart.appendChild(mk("gas","top","grid-column:1/3;grid-row:2"));
+chart.appendChild(mk("liq","top","grid-column:3/5;grid-row:2"));
+["gtx","ggath","ltx","lgath"].forEach(function(f,i){
+  chart.appendChild(mk(f,"fn","grid-column:"+(i+1)+";grid-row:3"));
+  var d=document.createElement("div");d.className="leaves";d.style.cssText="grid-column:"+(i+1)+";grid-row:4";
+  LAY[f].forEach(function(l){d.appendChild(mk(l,""))});chart.appendChild(d);
+});
+var NS="http://www.w3.org/2000/svg",svg=document.createElementNS(NS,"svg");svg.setAttribute("class","wires");chart.insertBefore(svg,chart.firstChild);
+var pop=document.createElement("div");pop.className="pop";pop.hidden=true;pop.setAttribute("role","dialog");chart.appendChild(pop);
+pop.addEventListener("click",function(e){e.stopPropagation()});
+var onPath={};
+function rb(id){var c=chart.getBoundingClientRect(),r=$("n-"+id).getBoundingClientRect();return{l:r.left-c.left,r:r.right-c.left,t:r.top-c.top,b:r.bottom-c.top,cx:(r.left+r.right)/2-c.left,cy:(r.top+r.bottom)/2-c.top}}
+function wires(){
+  svg.setAttribute("width",chart.scrollWidth);svg.setAttribute("height",chart.scrollHeight);
+  var ps=[];
+  function bus(p,kids){var P=rb(p),ks=kids.map(rb),my=(P.b+Math.min.apply(null,ks.map(function(k){return k.t})))/2;
+    kids.forEach(function(k,i){ps.push({d:"M"+P.cx+" "+P.b+"V"+my+"H"+ks[i].cx+"V"+ks[i].t,on:onPath[p]&&onPath[k]})})}
+  bus("root",["gas","liq"]);bus("gas",["gtx","ggath"]);bus("liq",["ltx","lgath"]);
+  Object.keys(LAY).forEach(function(f){var F=rb(f),sx=F.l+12;
+    LAY[f].forEach(function(l){var L=rb(l);ps.push({d:"M"+sx+" "+F.b+"V"+L.cy+"H"+L.l,on:onPath[f]&&onPath[l]})})});
+  ps.sort(function(a,b){return a.on-b.on});
+  svg.innerHTML=ps.map(function(p){return '<path d="'+p.d+'"'+(p.on?' class="on"':'')+'/>'}).join("");
+  if(!pop.hidden&&selId)place(selId);
+}
+var selId=null;
+function place(id){
+  var N=rb(id),w=300,cw=chart.scrollWidth,ch=Math.max(chart.scrollHeight,0),left,top;
+  if(N.r+12+w<=cw){left=N.r+12;top=N.t}else if(N.l-12-w>=0){left=N.l-12-w;top=N.t}else{left=Math.max(0,Math.min(N.l,cw-w));top=N.b+8}
+  pop.style.left=left+"px";pop.style.top="0px";
+  var h=pop.offsetHeight;top=Math.max(0,Math.min(top,ch-h));pop.style.top=top+"px";
+}
+function showPop(id){
+  var t=T[id];
+  if(selId&&$("n-"+selId))$("n-"+selId).classList.remove("sel");
+  selId=id;$("n-"+id).classList.add("sel");
+  var chain=[],x=id;while(x){chain.unshift(T[x].n);x=PARENT[x]}
+  pop.innerHTML='<button type="button" class="x" aria-label="Close">&times;</button><span class="tag" style="align-self:flex-start">'+(t.k==="gas"?"Part 192":t.k==="liq"?"Part 195":"Overview")+'</span><h4>'+t.n+'</h4><p class="cfr" style="margin:0">'+chain.join(" &rsaquo; ")+'</p><p>'+t.p+'</p><p class="cfr">'+t.c+'</p>';
+  pop.querySelector(".x").addEventListener("click",closePop);
+  pop.hidden=false;place(id);
+  try{pop.scrollIntoView({block:"nearest",inline:"nearest",behavior:"smooth"})}catch(e){pop.scrollIntoView(false)}
+}
+function closePop(){pop.hidden=true;if(selId&&$("n-"+selId))$("n-"+selId).classList.remove("sel");selId=null}
+document.addEventListener("click",function(e){if(!pop.hidden&&!chart.contains(e.target))closePop()});
+chart.addEventListener("click",function(){if(!pop.hidden)closePop()});
+document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!pop.hidden)closePop()});
+if(window.ResizeObserver)new ResizeObserver(function(){wires()}).observe(chart);else window.addEventListener("resize",wires);
+var lastLeaf=null;
+$("goTree").addEventListener("click",function(e){e.stopPropagation();if(!lastLeaf)return;$("treeSec").scrollIntoView({behavior:"smooth",block:"start"});setTimeout(function(){showPop(lastLeaf)},350)});
+
+function seg(k,v){st[k]=v;document.querySelectorAll('[data-k="'+k+'"]').forEach(function(b){b.setAttribute("aria-pressed",b.dataset.v===v?"true":"false")})}
+document.querySelectorAll(".seg button").forEach(function(b){b.addEventListener("click",function(){seg(b.dataset.k,b.dataset.v);run()})});
+$("frm").addEventListener("input",run);
+$("frm").addEventListener("change",run);
+$("frm").addEventListener("submit",function(e){e.preventDefault()});
+
+function num(id){var v=parseFloat($(id).value);return isFinite(v)?v:NaN}
+function f(x,d){return isFinite(x)?x.toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d}):"-"}
+function cmp(a,b){return a>=b?"&ge;":"&lt;"}
+
+function layout(){
+  var gas=st.com==="gas",gath=st.fn==="gath",steel=st.mat==="steel";
+  $("fsClass").hidden=!gas;
+  $("fsTypeB").hidden=!(gas&&gath);
+  $("fsTypeC").hidden=!(gas&&gath);
+  $("fsHCA").hidden=!(gas&&!gath);
+  $("fsLiqTx").hidden=!(!gas&&!gath);
+  $("fsLiqG").hidden=!(!gas&&gath);
+  $("steelRow").hidden=!steel;$("wtWrap").hidden=!steel;$("unkWrap").hidden=!steel;
+  $("smysWrap").hidden=$("grade").value!=="custom";
+  $("cmCount").hidden=st.cm!=="count";$("cmCount2").hidden=st.cm!=="count";$("cmDirect").hidden=st.cm!=="direct";
+  var unk=steel&&$("unk").checked;$("wt").disabled=unk;$("grade").disabled=unk;$("smys").disabled=unk;
+}
+
+function run(){
+  layout();
+  var gas=st.com==="gas",gath=st.fn==="gath",steel=st.mat==="steel",unk=steel&&$("unk").checked;
+  var D=num("od"),t=num("wt"),P=num("p"),S=$("grade").value==="custom"?num("smys"):parseFloat($("grade").value);
+  var miss=[];
+  if(!(D>0))miss.push("outside diameter");
+  if(!(P>=0))miss.push("MAOP / MOP");
+  if(steel&&!unk){if(!(t>0))miss.push("wall thickness");if(!(S>0))miss.push("SMYS");if(t>0&&D>0&&t>=D/2)miss.push("a wall thickness smaller than half the OD")}
+  var R={cls:gas?"gas":"liq",tag:"",title:"",sub:"",path:["root"],trace:[],reqs:[],metrics:[],note:""};
+  if(miss.length){render({cls:"err",tag:"Input needed",title:"Missing data",sub:"Enter "+miss.join(", ")+" to classify the segment.",path:[],trace:[],reqs:[],metrics:[],note:""});return}
+
+  var hoop=(steel&&!unk)?P*D/(2*t):NaN, pct=hoop/S*100;
+  var known=steel&&!unk;
+  if(known){R.metrics.push(["Hoop stress",f(hoop,0)+" psi"]);R.metrics.push(["% SMYS",f(pct,1)+"%"])}
+
+  if(gas){
+    R.path.push("gas");
+    var cls;
+    if(st.cm==="direct"){cls=parseInt($("clsD").value,10);R.trace.push("Class "+cls+" entered directly.")}
+    else{
+      var nb=num("bldg");if(!(nb>=0))nb=0;
+      cls=nb<=10?1:nb<=45?2:3;
+      var why=nb+" buildings in the 1-mile unit gives Class "+cls;
+      if($("asm").checked&&cls<3){cls=3;why+=", raised to Class 3 by the 100-yard assembly rule"}
+      if($("story").checked){cls=4;why+=", raised to Class 4 because 4+ story buildings are prevalent"}
+      R.trace.push(why+" (192.5).");
+    }
+    R.metrics.push(["Class location",String(cls)]);
+    if(gath){R.path.push("ggath");gasGath(R,cls,D,P,pct,known,steel)}
+    else{R.path.push("gtx","c"+cls);gasTx(R,cls,D,t,P,S,pct,known,steel)}
+  } else {
+    R.path.push("liq");
+    if(gath){R.path.push("lgath");liqGath(R,D,P,pct,known,steel)}
+    else{R.path.push("ltx");liqTx(R,D,t,P,S,pct,known,steel)}
+  }
+  render(R);
+}
+
+function stressLine(R,P,pct,known,steel,thr,strict){
+  if(!steel){R.trace.push("Non-metallic: MAOP "+P+" psig is "+(P>125?"above":"at or below")+" 125 psig.");return P>125}
+  if(!known)return null;
+  var hi=strict?pct>thr:pct>=thr;
+  R.trace.push("Hoop stress is "+f(pct,1)+"% SMYS, "+(hi?(strict?"above ":"at or above "):(strict?"at or below ":"below "))+thr+"%.");
+  return hi;
+}
+
+function gasGath(R,cls,D,P,pct,known,steel){
+  var hi=stressLine(R,P,pct,known,steel,20,false);
+  var pic=0.73*D*Math.sqrt(P);
+  if(cls>=2){
+    if(hi===null){R.cls="err";R.tag="Gas gathering";R.title="Type A or B";R.sub="Metallic line with unknown stress in Class "+cls+". 192.8 requires the operator to determine stress level under subpart C before typing.";R.trace.push("Stress unknown: A vs B cannot be split (192.8 table 1).");R.reqs=["Determine wall thickness and grade (subpart C) or establish them by test, then re-run."];return}
+    if(hi){typeA(R,cls);return}
+    if(cls>=3){R.trace.push("Class "+cls+" is Area 1 for Type B.");typeB(R,"Area 1");return}
+    var a=$("b2a").checked,b=num("b2b"),c=num("b2c"),hit=null;
+    if(a)hit="Method (a), whole Class 2 location";
+    else if(b>10&&b<46)hit="Method (b), "+b+" dwellings within 150 ft over 1 mile";
+    else if(c>=5)hit="Method (c), "+c+" dwellings within 150 ft over 1,000 ft";
+    if(hit){R.trace.push("Class 2 Area 2 met by "+hit+".");typeB(R,"Area 2",!a);return}
+    R.trace.push("Class 2 but no Area 2 method met, so not Type B.");typeR(R);return;
+  }
+  var odOk=D>=8.625;
+  R.trace.push("Class 1: OD "+f(D,3)+" in is "+(odOk?"at or above":"below")+" 8.625 in.");
+  var cHi=hi;
+  if(hi===null){cHi=P>125;R.trace.push("Stress unknown, so 192.8 uses MAOP: "+P+" psig is "+(cHi?"above":"at or below")+" 125 psig.")}
+  if(odOk&&cHi){typeC(R,D,P,pic);return}
+  typeR(R);
+}
+function typeA(R,cls){
+  R.path.push("ta");R.tag="Gas gathering";R.title="Type A";R.sub="Regulated onshore gathering in Class "+cls+", at or above 20% SMYS (or non-metallic above 125 psig).";
+  R.reqs=["Part 192 transmission-line requirements, minus the 192.9(c) exclusions","No subpart O IMP or HCA identification; no 192.607, 192.624, 192.710, 192.712, 192.714","Emergency plans per 192.615","Operator qualification (subpart N)"+(cls===2?"; in Class 2 a written description of OQ processes is enough":""),"Exempt from 192.179(e)-(g), 192.610, 192.617(b)-(d), 192.634-.636, 192.745(c)-(f)"];
+}
+function typeB(R,area,buffer){
+  R.path.push("tb");R.tag="Gas gathering";R.title="Type B";R.sub="Regulated onshore gathering, "+area+", below 20% SMYS (or non-metallic at 125 psig or less).";
+  R.reqs=["New, replaced or changed pipe: transmission design, construction and initial test (with 192.9(d)(1) exceptions)","Corrosion control per subpart I if metallic","Plastic pipe requirements if any plastic","Damage prevention (192.614) and public education (192.616)","MAOP per 192.619(a)-(c)","Line markers (192.707)","Leakage surveys (192.706) and prompt repair of hazardous leaks"];
+  if(buffer)R.note="Area 2(b) or 2(c): Type B extends upstream and downstream until the line is at least 150 ft from the nearest dwelling in the area.";
+}
+function typeC(R,D,P,pic){
+  R.path.push("tc");R.tag="Gas gathering";R.metrics.push(["PIC radius (0.73)",f(pic,0)+" ft"]);
+  var big=D>12.75,ex=D<=16&&!$("cOcc").checked;
+  R.title="Type C";R.sub="Class 1, OD 8.625 in or more"+(big?", above 12.75 in tier":", 8.625-12.75 in tier")+(ex?", 192.9(f) exemption applies":"")+".";
+  if(D<=16)R.trace.push(ex?"OD 16 in or less with no occupied building or impacted site in the "+f(pic,0)+" ft PIC: 192.9(f) exemption applies.":"Occupied building or impacted site in the PIC: no 192.9(f) exemption.");
+  else R.trace.push("OD above 16 in: 192.9(f) exemption is not available.");
+  var r=["New, replaced or changed pipe: subparts B-G and J for transmission (192.9(e)(1)(i))","Damage prevention (192.614)","Emergency plans (192.615)"];
+  if(!ex){r.push("Corrosion control per subpart I if metallic","Public awareness (192.616)","Line markers (192.707)","Leakage surveys (192.706) and prompt hazardous-leak repair");
+    if(big)r.push("Plastic pipe requirements if plastic","MAOP per 192.619(a) or (c), with records kept for the life of the line");}
+  R.reqs=r;
+}
+function typeR(R){R.path.push("tr");R.tag="Gas gathering";R.title="Type R";R.sub="Onshore gathering not meeting Type A, B or C. Reporting only.";R.reqs=["Incident and annual reporting under Part 191","Not a regulated onshore gathering line (192.8(c)(3))"]}
+
+function gasTx(R,cls,D,t,P,S,pct,known,steel){
+  var F=[0,0.72,0.60,0.50,0.40][cls];
+  R.tag="Gas transmission";
+  R.metrics.push(["Design factor F",f(F,2)]);
+  var pir=0.69*D*Math.sqrt(P);R.metrics.push(["PIR",f(pir,0)+" ft"]);
+  R.trace.push("PIR = 0.69 x "+f(D,3)+" x sqrt("+P+") = "+f(pir,0)+" ft (192.903).");
+  if(known){
+    var dp=2*S*t/D*F;R.metrics.push(["Design pressure",f(dp,0)+" psig"]);
+    if(P>dp){R.metrics[R.metrics.length-1].push("flag");R.note="MAOP of "+P+" psig produces "+f(pct,1)+"% SMYS, above the Class "+cls+" design factor of "+(F*100)+"%. Check 192.619 and 192.611 class-change confirmation.";}
+    R.trace.push("Design pressure 2St/D x F = "+f(dp,0)+" psig vs MAOP "+P+" psig (192.105, 192.111).");
+  } else R.trace.push(steel?"Stress unknown: design pressure check skipped.":"Non-metallic: steel design formula not applied.");
+  var nb=num("picB");if(!(nb>=0))nb=0;var id=$("ident").checked,m=$("hcaM").value,hca;
+  if(m==="1"){hca=cls>=3||(pir>660&&nb>=20)||id;R.trace.push("Method 1: "+(cls>=3?"Class "+cls+" is an HCA.":(pir>660&&nb>=20)?"PIR over 660 ft with "+nb+" buildings in the PIC.":id?"Identified site in the PIC.":"no Class 3/4, PIR test or identified site."))}
+  else{hca=nb>=20||id;R.trace.push("Method 2: "+(nb>=20?nb+" buildings in the PIC (20+).":id?"Identified site in the PIC.":"fewer than 20 buildings and no identified site."))}
+  var mca=!hca&&(nb>=5||id||$("road").checked);
+  if(hca){R.path.push("ghca");R.title="Class "+cls+" HCA segment";R.sub="Gas transmission inside a high consequence area.";R.reqs=["Subpart O IMP: baseline assessment and reassessment (192.939 intervals)","Threat identification, P&M measures, remediation per 192.933","Design factor "+F+" for Class "+cls]}
+  else if(mca){R.path.push("gmca");R.title="Class "+cls+" MCA segment";R.sub="Gas transmission, moderate consequence area, not an HCA.";R.trace.push("Not an HCA; PIC meets MCA criteria (192.3).");R.reqs=["192.710 assessment if the segment can accommodate ILI","192.712 analysis of predicted failure pressure","Design factor "+F+" for Class "+cls]}
+  else{R.title="Class "+cls+" transmission";R.sub="Gas transmission outside HCA and MCA.";R.reqs=["Design factor "+F+" for Class "+cls,cls>=3?"192.710 assessment applies in Class 3 and 4 if ILI-capable":"No subpart O or 192.710 assessment triggered by location","Class location studies per 192.609 as population changes"]}
+}
+
+function liqTx(R,D,t,P,S,pct,known,steel){
+  R.tag="Liquid transmission";
+  if(known){var dp=2*S*t/D*0.72;R.metrics.push(["Design pressure (0.72)",f(dp,0)+" psig"]);R.trace.push("Design pressure 2St/D x 0.72 = "+f(dp,0)+" psig vs MOP "+P+" psig (195.106).");
+    if(P>dp){R.metrics[R.metrics.length-1].push("flag");R.note="MOP exceeds the 0.72 design pressure. Check 195.406.";}}
+  var ca=$("ca").checked;
+  if(ca){R.path.push("lhca");R.title="Could-affect HCA segment";R.sub="Hazardous liquid transmission under the 195.452 IMP.";R.trace.push("Could-affect analysis identifies an HCA (195.450).");R.reqs=["195.452 IMP: baseline and periodic assessment","Preventive and mitigative measures, leak detection evaluation","EFRD evaluation per 195.452(i)(4)"]}
+  else{R.path.push("lnon");R.title="Non-HCA segment";R.sub="Hazardous liquid transmission outside could-affect HCAs.";R.trace.push("No could-affect HCA identified.");R.reqs=["Periodic integrity assessment outside HCAs where ILI-capable (195.416)","Leak detection per 195.134 and 195.444"]}
+  if(known&&pct<=20){R.path.push("llow");R.trace.push(f(pct,1)+"% SMYS is 20% or less: low-stress pipeline.");R.reqs.push("Low-stress line: confirm applicable category in 195.12")}
+}
+function liqGath(R,D,P,pct,known,steel){
+  R.tag="Liquid gathering";
+  if(!$("rural").checked){R.path.push("lnr");R.title="Non-rural gathering";R.sub="Onshore gathering in a non-rural area is subject to Part 195.";R.trace.push("Line is not in a rural area (195.1).");R.reqs=["Part 195 requirements as applicable to the line"];return}
+  var dOk=D>=6.625&&D<=8.625,u=$("usa").checked;
+  R.trace.push("OD "+f(D,3)+" in is "+(dOk?"inside":"outside")+" the 6-5/8 to 8-5/8 in range.");
+  R.trace.push(u?"Within 1/4 mile of a USA.":"Not within 1/4 mile of a USA.");
+  var hi;
+  if(steel&&known)hi=stressLine(R,P,pct,known,steel,20,true);
+  else{hi=P>125;R.trace.push((steel?"Stress unknown":"Non-steel")+": MOP "+P+" psig is "+(hi?"above":"at or below")+" 125 psig.")}
+  if(dOk&&u&&hi){R.path.push("lrrg");R.title="Regulated rural gathering";R.sub="Meets all three 195.11(a) criteria.";R.reqs=["Written procedures; segment identification records for life","New or changed steel pipe designed and tested to Part 195","Reporting (subpart B), MOP per 195.406, line markers (195.410)","Public education (195.440) and damage prevention (195.442)","Steel: corrosion control (subpart H) and internal corrosion program","Operator qualification process description (subpart G)"]}
+  else{R.path.push("lrpt");R.title="Reporting-regulated gathering";R.sub="Rural gathering not meeting 195.11.";R.reqs=["Reporting requirements only (195.15)"]}
+}
+
+function render(R){
+  var v=$("verdict");v.className="verdict "+R.cls;
+  v.innerHTML=(R.tag?'<span class="tag">'+R.tag+'</span>':'')+'<div class="vt">'+R.title+'</div><p class="vs">'+lk(R.sub,R.cls)+'</p>';
+  $("metrics").innerHTML=R.metrics.map(function(m){return '<div class="metric'+(m[2]?" flag":"")+'"><b>'+m[1]+'</b><span>'+m[0]+'</span></div>'}).join("");
+  $("trace").innerHTML=R.trace.map(function(x){return "<li>"+lk(x,R.cls)+"</li>"}).join("")||"<li>Waiting for inputs.</li>";
+  $("reqs").innerHTML=R.reqs.map(function(x){return "<li>"+lk(x,R.cls)+"</li>"}).join("")||"<li>-</li>";
+  var n=$("note");n.hidden=!R.note;n.innerHTML=R.note?lk(R.note,R.cls):"";
+  document.querySelectorAll(".nd.onpath").forEach(function(b){b.classList.remove("onpath")});
+  onPath={};R.path.forEach(function(id){onPath[id]=1;var b=$("n-"+id);if(b)b.classList.add("onpath")});
+  lastLeaf=R.path.length>1?R.path[R.path.length-1]:null;$("goTree").hidden=!lastLeaf;
+  $("crumb").innerHTML=lastLeaf?"Current result: "+R.path.map(function(id){return T[id].n}).join(" &rsaquo; ").replace(/([^;]*)$/,"<b>$1</b>"):"";
+  wires();
+}
+
+var EX={
+ c:{com:"gas",fn:"gath",mat:"steel",cm:"count",od:10.75,wt:0.25,p:1000,grade:"52000",unk:false,bldg:4,asm:false,story:false,cOcc:false,b2a:false,b2b:"",b2c:""},
+ a:{com:"gas",fn:"gath",mat:"steel",cm:"count",od:6.625,wt:0.188,p:720,grade:"42000",unk:false,bldg:52,asm:false,story:false,cOcc:false,b2a:false,b2b:"",b2c:""},
+ b:{com:"gas",fn:"gath",mat:"steel",cm:"count",od:4.5,wt:0.237,p:150,grade:"35000",unk:false,bldg:18,asm:false,story:false,cOcc:false,b2a:false,b2b:"",b2c:7},
+ tx:{com:"gas",fn:"tx",mat:"steel",cm:"count",od:24,wt:0.375,p:1000,grade:"60000",unk:false,bldg:30,asm:false,story:false,hcaM:"2",picB:26,ident:false,road:true},
+ rrg:{com:"liq",fn:"gath",mat:"steel",od:8.625,wt:0.188,p:900,grade:"42000",unk:false,rural:true,usa:true}
+};
+function loadEx(k){
+  var e=EX[k];
+  ["com","fn","mat","cm"].forEach(function(s){if(e[s])seg(s,e[s])});
+  ["od","wt","p","bldg","b2b","b2c","picB"].forEach(function(i){if(i in e)$(i).value=e[i]});
+  ["unk","asm","story","cOcc","b2a","ident","road","rural","usa","ca"].forEach(function(i){$(i).checked=!!e[i]});
+  if(e.grade)$("grade").value=e.grade;if(e.hcaM)$("hcaM").value=e.hcaM;
+  run();
+}
+document.querySelectorAll("[data-ex]").forEach(function(b){b.addEventListener("click",function(){loadEx(b.dataset.ex)})});
+document.querySelectorAll("legend,p.hint,footer").forEach(function(el){if(el.id!=="formErr")el.innerHTML=lk(el.innerHTML,el.closest("#fsLiqTx,#fsLiqG")?"195":"192")});
+loadEx("c");
+})();
+</script>
