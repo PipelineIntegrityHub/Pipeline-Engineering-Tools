@@ -251,7 +251,8 @@ var GROUPS = {
   "Integrity / Fitness-for-Service":    { color: "#7c3aed", note: "Integrity assessment and corroded pipe evaluation" },
   "Repair and Replacement Decisions":   { color: "#b45309", note: "Deferral risk, repair economics and replacement" },
   "Corrosion Control":                  { color: "#0f766e", note: "Cathodic protection" },
-  "Consequence Analysis":               { color: "#be123c", note: "Release and spill volume estimation" }
+  "Consequence Analysis":               { color: "#be123c", note: "Release and spill volume estimation" },
+    "Regulatory Compliance":              { color: "#4d7c0f", note: "Pipeline classification and 49 CFR applicability" }
 };
 
 /* href must match the file name EXACTLY - GitHub Pages is case-sensitive */
@@ -286,7 +287,11 @@ var TOOLS = [
 
   { group: "Consequence Analysis", title: "Pinhole Leak Spill Model", icon: "drop", rev: "",
     desc: "Spill volume vs hole size and detection time for above-ground oil piping.",
-    refs: [], href: "Pinhole-Leak-Spill-Model.html" }
+    refs: [], href: "Pinhole-Leak-Spill-Model.html" },
+  
+  { group: "Regulatory Compliance", title: "Pipeline Classification", icon: "shield", rev: "",
+    desc: "Determines pipeline regulatory classification and applicable 49 CFR 192 / 195 requirements.",
+    refs: ["49 CFR 192", "49 CFR 195"], href: "Pipeline-Classification.html" }
 ];
 
 /* ================= no edits needed below ================= */
