@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Repair Timing Economics</title>
+<style>
+:root{--navy:#13233f;--navy2:#1d3460;--bg:#f3f5f8;--card:#fff;--line:#d9dee7;--ink:#1d2433;--mute:#5a6475;--blue:#1f5fbf;--green:#1e8449;--red:#c0392b;--amber:#b7791f;--amberbg:#fff6e0}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font:13px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink);background:var(--bg);display:flex;flex-direction:column;height:100vh;overflow:hidden}
+header{background:var(--navy);color:#fff;padding:8px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+header h1{margin:0;font-size:16px;letter-spacing:.06em}
+header .sub{font-size:11px;color:#b9c6de}
+header .sp{flex:1}
+header button{background:#2b4a80;color:#fff;border:1px solid #3d5f9b}
+nav{background:var(--navy2);display:flex;overflow-x:auto;padding:0 8px;gap:2px;scrollbar-width:thin}
+nav button{background:none;border:0;border-bottom:3px solid transparent;color:#c9d4ea;padding:9px 13px;font-size:13px;white-space:nowrap;cursor:pointer;border-radius:0}
+nav button:hover{color:#fff}
+nav button.on{color:#fff;border-bottom-color:#5aa0ff;background:rgba(255,255,255,.07);font-weight:600}
+#status{display:flex;flex-wrap:wrap;gap:4px 18px;padding:6px 16px;background:#e8edf5;border-bottom:1px solid var(--line);font-size:12px}
+#status b{font-weight:600}
+main{flex:1;overflow:hidden;position:relative}
+.tab{position:absolute;inset:0;overflow:auto;padding:14px 16px 40px;display:none}
+.tab.on{display:block}
+button{font:inherit;padding:5px 11px;border-radius:4px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
+button:hover{border-color:var(--blue)}
+button.pri{background:var(--blue);color:#fff;border-color:var(--blue)}
+.bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
+.bar label{display:flex;gap:5px;align-items:center}
+select,input[type=number],input[type=text],input[type=date],textarea{font:inherit;padding:4px 6px;border:1px solid #c3cad6;border-radius:4px;background:#fff;color:var(--ink)}
+input[type=number]{width:110px}
+input:focus,select:focus,textarea:focus{outline:2px solid #9cc2ff;border-color:var(--blue)}
+input.bad{border-color:var(--red);background:#fff1f0}
+details.grp{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:6px;margin-bottom:10px}
+details.grp summary{padding:8px 12px;font-weight:600;cursor:pointer;user-select:none}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:6px 18px;padding:4px 12px 12px}
+.fld{display:flex;flex-direction:column;gap:2px}
+.fld .ln{color:var(--mute);font-size:12px}
+.fld .ctl{display:flex;align-items:center;gap:6px}
+.fld .ctl em{font-style:normal;color:var(--mute);font-size:11px}
+.fld textarea{width:100%}
+.err{color:var(--red);font-size:11px;min-height:0}
+.q{display:inline-block;width:14px;height:14px;border-radius:50%;background:#dfe7f5;color:var(--blue);font-style:normal;font-size:10px;text-align:center;line-height:14px;cursor:help}
+.card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin-bottom:12px}
+.card h3{margin:0 0 6px;font-size:13px;color:var(--navy)}
+.card h4{margin:10px 0 4px;font-size:12px}
+.note{color:var(--mute);font-size:12px}
+.cols2{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:12px}
+.chart{position:relative;width:100%;height:290px}
+.chart.tall{height:380px}
+.chart canvas{display:block}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-bottom:12px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+.kpi .k{font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.03em}
+.kpi .v{font-size:19px;font-weight:600;margin-top:2px}
+.kpi .s{font-size:11px;color:var(--mute)}
+.pos{color:var(--green)}.neg{color:var(--red)}.amb{color:var(--amber)}
+.rec{border-left:5px solid var(--navy);background:#fff;padding:10px 14px;border-radius:6px;margin-bottom:12px;border:1px solid var(--line)}
+.rec.g{border-left-color:var(--green)}.rec.r{border-left-color:var(--red)}.rec.a{border-left-color:var(--amber);background:var(--amberbg)}
+.rec h2{margin:0 0 4px;font-size:15px}
+.tw{overflow:auto;max-height:62vh;border:1px solid var(--line);border-radius:6px;background:#fff}
+table{border-collapse:collapse;width:100%;font-size:12px}
+th,td{padding:4px 7px;border-bottom:1px solid #edf0f4;text-align:right;white-space:nowrap}
+th{background:#eef2f8;position:sticky;top:0;z-index:1;color:#2a3550;font-weight:600;cursor:default}
+th.s{cursor:pointer}
+th.s:hover{background:#dfe7f5}
+td.l,th.l{text-align:left}
+tr.selrow td{background:#eaf2ff}
+tr:hover td{background:#f6f9ff}
+tfoot td{font-weight:600;background:#f4f6fa}
+.tag{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;font-weight:600}
+.tag.g{background:#e3f4e9;color:var(--green)}.tag.r{background:#fbe7e5;color:var(--red)}.tag.a{background:#fff1d1;color:#8a5a00}.tag.x{background:#e7e9ee;color:#555}
+.pass{color:var(--green);font-weight:700}.fail{color:var(--red);font-weight:700}
+#tip{position:fixed;pointer-events:none;background:#16223a;color:#fff;padding:6px 9px;border-radius:5px;font-size:12px;max-width:340px;z-index:99;display:none;line-height:1.4}
+.meth h3{color:var(--navy);margin:16px 0 4px;font-size:14px}
+.meth p,.meth li{max-width:980px}
+.meth code,.f{font-family:ui-monospace,Menlo,Consolas,monospace;background:#eef2f8;padding:1px 5px;border-radius:3px;font-size:12px}
+.f{display:block;padding:6px 10px;margin:4px 0;white-space:pre-wrap}
+#prog{color:var(--amber);font-weight:600}
+.small{font-size:11px}
+table.kv td{white-space:normal;vertical-align:top}table.kv td:first-child{text-align:left;color:var(--mute);width:42%}table.kv td:last-child{text-align:left}
+.verdict{margin:10px 0 2px;padding:8px 10px;border-radius:5px;background:#f4f6fa;border-left:4px solid var(--navy)}
+.verdict.g{border-left-color:var(--green)}.verdict.r{border-left-color:var(--red)}.verdict.a{border-left-color:var(--amber);background:var(--amberbg)}
+.be td,.be th{white-space:normal}
+.inl{display:inline-flex;gap:4px;align-items:center}
+@media (max-width:700px){.tab{padding:10px 8px 40px}.cols2{grid-template-columns:1fr}.chart{height:250px}header .sub{display:none}}
+@media print{
+ body{height:auto;overflow:visible;display:block;background:#fff}
+ header button,nav,#status,.noprint{display:none!important}
+ main{overflow:visible}
+ .tab{display:none!important;position:static}
+ #t-dash{display:block!important}
+ .card,.kpi,.rec{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<header>
+ <div><h1>WELL &amp; PIPELINE REPAIR ECONOMICS</h1>
+ <div class="sub">Production Forecasting | Shutdown Recovery | NPV | Integrity Risk | Repair Timing Optimization</div></div>
+ <div class="sp"></div>
+ <button onclick="printDash()">Print dashboard</button>
+</header>
+<nav id="tabs">
+ <button data-tab="inputs">Inputs</button>
+ <button data-tab="matrix">Scenario Matrix</button>
+ <button data-tab="cash">Monthly Cash Flow</button>
+ <button data-tab="dash">Decision Dashboard</button>
+ <button data-tab="sens">Sensitivity &amp; Decision Boundary</button>
+ <button data-tab="meth">Methodology &amp; Validation</button>
+</nav>
+<div id="status"></div>
+<main>
+
+<!-- ================= TAB 1 INPUTS ================= -->
+<section class="tab" id="t-inputs">
+ <div class="bar">
+  <button onclick="resetDefaults()">Reset defaults</button>
+  <button onclick="exportJSON()">Export inputs (JSON)</button>
+  <button onclick="document.getElementById('impFile').click()">Import inputs (JSON)</button>
+  <input type="file" id="impFile" accept=".json,application/json" style="display:none">
+  <span style="width:12px"></span>
+  <input type="text" id="saveName" placeholder="Scenario name" style="width:150px">
+  <button onclick="saveScenario()">Save to browser</button>
+  <select id="savedList"></select>
+  <button onclick="loadScenario()">Load</button>
+  <button onclick="deleteScenario()">Delete</button>
+  <button onclick="setAllGroups(true)">Expand all</button>
+  <button onclick="setAllGroups(false)">Collapse all</button>
+ </div>
+ <div id="inErrs" class="note"></div>
+ <div id="formHost"></div>
+</section>
+
+<!-- ================= TAB 2 MATRIX ================= -->
+<section class="tab" id="t-matrix">
+ <div class="card">
+  <h3>Scenario matrix &mdash; 4 configurations x 3 price paths x 2 recovery methods x 2 repair timings = 48 economic cases (24 matched comparisons)</h3>
+  <div class="bar">
+   <label>Configuration <select id="fCfg"><option value="">All</option><option value="0">No refrac, no dev.</option><option value="1">Refrac only</option><option value="2">Development only</option><option value="3">Refrac + development</option></select></label>
+   <label>Price <select id="fPrice"><option value="">All</option><option value="decl">Declining</option><option value="flat">Flat</option><option value="inc">Increasing</option></select></label>
+   <label>Recovery <select id="fRec"><option value="">All</option><option value="elev">Elevated</option><option value="grad">Gradual</option></select></label>
+   <label><input type="checkbox" id="fNoDecl"> Show no-decline sensitivity rows (N-series, not part of the 48)</label>
+  </div>
+  <div class="bar">
+   <button onclick="selAll(true)">Check all</button><button onclick="selAll(false)">Uncheck all</button>
+   <button onclick="exportMatrixCSV()">Export matrix CSV</button>
+   <span class="note">Click a row ID to make it the selected scenario. Checked rows feed the comparison table and the dashboard ranking chart. Use the Status column to mark a case technically infeasible or integrity-prohibited.</span>
+  </div>
+  <div id="mxSum"></div>
+  <div class="tw" style="max-height:52vh"><table id="mxTable"></table></div>
+ </div>
+ <div class="card"><h3>Side-by-side comparison of checked scenarios</h3><div class="tw" style="max-height:40vh"><table id="cmpTable"></table></div></div>
+ <div class="card"><h3>Probability-weighted results (selected recovery method)</h3><div id="pwBox"></div></div>
+</section>
+
+<!-- ================= TAB 3 CASH FLOW ================= -->
+<section class="tab" id="t-cash">
+ <div class="bar">
+  <label>View <select id="cfView"><option value="now">Repair Now</option><option value="later">Repair Later</option><option value="side">Side-by-side</option><option value="inc">Incremental (Later - Now)</option></select></label>
+  <label>Recovery <select id="cfRec"><option value="elev">Elevated</option><option value="grad">Gradual</option></select></label>
+  <button onclick="exportCashCSV()">Export cash flow CSV</button>
+  <span id="cfSum" class="note"></span>
+ </div>
+ <div class="cols2">
+  <div class="card"><h3>Monthly risk-adjusted net cash flow</h3><div class="chart" id="cfC1"></div></div>
+  <div class="card"><h3>Cumulative discounted cash flow (risk-adjusted)</h3><div class="chart" id="cfC2"></div></div>
+ </div>
+ <div class="card"><h3 id="cfTitle">Detailed monthly cash flow</h3><div class="tw"><table id="cfTable"></table></div></div>
+</section>
+
+<!-- ================= TAB 4 DASHBOARD ================= -->
+<section class="tab" id="t-dash">
+ <div id="recBox"></div>
+ <div class="cols2"><div class="card" id="sigBox"></div><div class="card" id="stakeBox"></div></div>
+ <div class="kpis" id="kpis"></div>
+ <div class="cols2">
+  <div class="card"><h3>1. Production forecast (daily rate)</h3><div class="chart" id="dC1"></div></div>
+  <div class="card"><h3>2. Oil-price forecast</h3><div class="chart" id="dC2"></div></div>
+  <div class="card"><h3>3. Monthly net cash flow (risk-adjusted)</h3><div class="chart" id="dC3"></div></div>
+  <div class="card"><h3>4. Cumulative discounted cash flow (risk-adjusted)</h3><div class="chart" id="dC4"></div></div>
+  <div class="card"><h3>5. Economic impact waterfall (Later - Now)</h3><div class="chart" id="dC5"></div><div class="note small" id="wfNote"></div></div>
+  <div class="card"><h3>6. Scenario ranking by risk-adjusted incremental NPV (checked rows)</h3><div class="chart tall" id="dC6"></div></div>
+ </div>
+ <div class="card" id="limBox"></div>
+</section>
+
+<!-- ================= TAB 5 SENSITIVITY ================= -->
+<section class="tab" id="t-sens">
+ <div class="card noprint">
+  <h3>Decision-boundary controls (apply to every chart on this tab; they do not change the Inputs tab)</h3>
+  <div class="bar">
+   <label>Price scenario <select id="sPrice"><option value="decl">Declining</option><option value="flat">Flat</option><option value="inc">Increasing</option><option value="custom">User-defined</option></select></label>
+   <label>Recovery <select id="sRec"><option value="elev">Elevated</option><option value="grad">Gradual</option></select></label>
+   <label><input type="checkbox" id="sRf"> Refrac</label>
+   <label><input type="checkbox" id="sDv"> Development</label>
+   <label>Failure consequence $ <input type="number" id="sCons"></label>
+   <label>Discount % <input type="number" id="sDisc" style="width:70px"></label>
+   <label>Resolution <select id="sRes"><option value="11">11 x 9</option><option value="21" selected>21 x 17</option><option value="31">31 x 25</option><option value="41">41 x 33</option></select></label>
+   <button onclick="syncSensFromInputs()">Reset to selected scenario</button>
+   <button class="pri" onclick="runSens()">Recalculate</button>
+   <button onclick="exportGridCSV()">Export boundary grids CSV</button>
+   <span id="prog"></span>
+  </div>
+  <div class="note">Every cell, point and bar on this tab is a full run of the same daily cash-flow engine used by the matrix and cash-flow tabs. The x-axis "oil price at deferred repair date" replaces the selected price path with a linear path from the current price to that value at the deferral month, flat thereafter, applied identically to both alternatives.</div>
+ </div>
+ <div class="cols2">
+  <div class="card"><h3>E. Repair timing optimization (0-24 months)</h3><div class="chart" id="sOpt"></div><div id="optTxt" class="note"></div></div>
+  <div class="card"><h3>H. Break-even values (numerical root-finding)</h3><div id="beBox"></div></div>
+  <div class="card"><h3>B. Oil price vs production decline</h3><div class="chart tall" id="hB"></div><div class="note" id="hBn"></div></div>
+  <div class="card"><h3>C. Oil price vs annual failure probability</h3><div class="chart tall" id="hC"></div><div class="note" id="hCn"></div></div>
+  <div class="card"><h3>D. Production decline vs annual failure probability</h3><div class="chart tall" id="hD"></div><div class="note" id="hDn"></div></div>
+  <div class="card"><h3>F. Break-even contour by refrac / development configuration (price vs decline)</h3><div class="chart tall" id="hF"></div><div class="note" id="hFn"></div></div>
+  <div class="card"><h3>I. Custom decision boundary</h3>
+   <div class="bar"><label>X <select id="cX"></select></label><input type="number" id="cXlo" style="width:80px"> to <input type="number" id="cXhi" style="width:80px">
+   <label>Y <select id="cY"></select></label><input type="number" id="cYlo" style="width:80px"> to <input type="number" id="cYhi" style="width:80px"></div>
+   <div class="chart tall" id="hX"></div><div class="note" id="hXn"></div></div>
+  <div class="card"><h3>G. Tornado sensitivity of risk-adjusted incremental NPV</h3><div class="chart tall" id="sTor"></div>
+   <details><summary class="small">Edit low / high ranges</summary><div class="tw" style="max-height:none"><table id="torTable"></table></div></details></div>
+ </div>
+</section>
+
+<!-- ================= TAB 6 METHODOLOGY ================= -->
+<section class="tab meth" id="t-meth">
+ <div class="card">
+  <h3 style="margin-top:0">Automated validation report</h3>
+  <div class="bar"><button class="pri" onclick="runValidation(true)">Re-run all tests</button><span id="valSum"></span></div>
+  <div class="tw" style="max-height:none"><table id="valTable"></table></div>
+ </div>
+ <div class="card" id="methText"></div>
+</section>
+</main>
+<div id="tip" role="tooltip"></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   0. UTILITIES
+   ===================================================================== */
+const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+const DPM=30.4375, YR=365.25;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt0=v=>isFinite(v)?Math.round(v).toLocaleString('en-US'):'n/a';
+const fmt2=v=>isFinite(v)?v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'n/a';
+const fmtD=v=>!isFinite(v)?'n/a':(v<0?'-$':'$')+Math.round(Math.abs(v)).toLocaleString('en-US');
+function fmtM(v){if(!isFinite(v))return 'n/a';const a=Math.abs(v),s=v<0?'-$':'$';if(a>=1e9)return s+(a/1e9).toFixed(2)+'B';if(a>=1e6)return s+(a/1e6).toFixed(2)+'M';if(a>=1e3)return s+(a/1e3).toFixed(1)+'k';return s+a.toFixed(0);}
+function fmtS(v){const a=Math.abs(v);if(a>=1e6)return (v/1e6).toFixed(a>=1e7?0:1)+'M';if(a>=1e3)return (v/1e3).toFixed(a>=1e4?0:1)+'k';return +v.toFixed(2)+'';}
+function fmtTick(v,st){const a=Math.max(Math.abs(v),Math.abs(st));const u=a>=1e6?1e6:a>=1e3?1e3:1,sfx=u===1e6?'M':u===1e3?'k':'';const dp=Math.min(4,Math.max(0,-Math.floor(Math.log10(st/u)+1e-9)));return (v/u).toFixed(dp)+sfx;}
+const sgn=v=>v>0?'pos':v<0?'neg':'';
+const clone=(o,ov)=>Object.assign({},o,ov||{});
+function linspace(a,b,n){const r=[];for(let i=0;i<n;i++)r.push(n===1?a:a+(b-a)*i/(n-1));return r;}
+function dl(name,text,mime){const b=new Blob([text],{type:mime||'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);}
+const csvCell=v=>{const s=String(v);return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;};
+const toCSV=rows=>rows.map(r=>r.map(csvCell).join(',')).join('\n');
+function store(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function load(k){try{const s=localStorage.getItem(k);return s?JSON.parse(s):null;}catch(e){return null;}}
+function todayISO(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+
+/* =====================================================================
+   1. INPUT SCHEMA + VALIDATION
+   ===================================================================== */
+const GROUPS=[['A','General & Production'],['B','Repair & Shutdown'],['C','Oil-Price Forecast'],['D','Production Recovery'],['E','Refrac'],['F','Additional Development'],['G','Integrity Risk'],['H','Financial'],['I','Decision & Integrity Limits'],['J','Probability Weighting']];
+const SCH=[];
+function f(g,id,label,def,o){SCH.push(Object.assign({g,id,label,def,type:'num'},o||{}));}
+f('A','Q0','Initial production rate',1000,{u:'bbl/d',min:0,max:1e6,tip:'Oil rate of the stream(s) at the analysis start date (t = 0).'});
+f('A','P0','Current oil price (benchmark)',80,{u:'$/bbl',min:0,max:500,tip:'Benchmark price at t = 0. Starting point of every price path.'});
+f('A','months','Forecast duration',36,{u:'months',min:12,max:120,step:1,int:true});
+f('A','disc','Annual discount rate',10,{u:'%/yr',min:0,max:50,tip:'Effective annual rate. Daily discount factor = (1+r)^-(t/365.25).'});
+f('A','declModel','Production decline model','exp',{type:'sel',opts:[['none','No decline'],['exp','Exponential (effective monthly)'],['hyp','Hyperbolic (Arps, nominal Di)']]});
+f('A','decl','Monthly decline, effective d',2,{u:'%/mo',min:0,max:50,tip:'Effective monthly decline fraction d: Q(m) = Q0 (1 - d)^m. Used by the exponential model.'});
+f('A','hypDi','Hyperbolic initial decline Di, nominal',2,{u:'%/mo',min:0,max:100,tip:'Nominal (instantaneous) initial decline per month in q = Q0 / (1 + b Di t)^(1/b). Not the same as an effective decline: d = 1 - exp(-Di) only when b = 0.'});
+f('A','hypB','Hyperbolic exponent b',0.5,{u:'-',min:0,max:2,step:0.05,tip:'b = 0 reduces to exponential with nominal rate Di; b = 1 is harmonic.'});
+f('A','start','Analysis start date',todayISO(),{type:'date',tip:'Day 0 of the analysis. Months are reported on calendar boundaries from this date.'});
+f('B','deferM','Deferred repair timing',12,{u:'months (0-24)',min:0,max:24,step:1,tip:'Repair day = round(months x 30.4375). Immediate repair always starts on day 0.'});
+f('B','shutDays','Shutdown duration (both alternatives)',14,{u:'days',min:0,max:365,tip:'Fractional days allowed; partial days are pro-rated.'});
+f('B','laterShutDays','Deferred-repair shutdown override',0,{u:'days (0 = same)',min:0,max:365,tip:'Leave 0 so both alternatives use the same shutdown duration.'});
+f('B','costNow','Repair cost today',500000,{u:'$',min:0,max:1e9});
+f('B','esc','Annual repair-cost escalation',3,{u:'%/yr',min:-20,max:50,tip:'Deferred cost = cost today x (1+e)^(t/365.25), unless an override is entered.'});
+f('B','costLater','Deferred repair cost override',0,{u:'$ (0 = escalate)',min:0,max:1e9});
+f('C','priceSel','Selected price path','decl',{type:'sel',opts:[['decl','Declining'],['flat','Flat'],['inc','Increasing'],['custom','User-defined (monthly list)']]});
+f('C','interp','Price interpolation','linear',{type:'sel',opts:[['linear','Linear between anchors'],['step','Step (hold anchor)']]});
+f('C','decl12','Declining: month-12 target',60,{u:'$/bbl',min:0,max:500});
+f('C','decl24','Declining: month-24 target',60,{u:'$/bbl',min:0,max:500});
+f('C','decl36','Declining: month-36 target',60,{u:'$/bbl',min:0,max:500});
+f('C','flat12','Flat: month-12 target',80,{u:'$/bbl',min:0,max:500});
+f('C','flat24','Flat: month-24 target',80,{u:'$/bbl',min:0,max:500});
+f('C','flat36','Flat: month-36 target',80,{u:'$/bbl',min:0,max:500});
+f('C','inc12','Increasing: month-12 target',100,{u:'$/bbl',min:0,max:500});
+f('C','inc24','Increasing: month-24 target',100,{u:'$/bbl',min:0,max:500});
+f('C','inc36','Increasing: month-36 target',100,{u:'$/bbl',min:0,max:500});
+f('C','custom','User-defined monthly prices (month 0, 1, 2, ...)','80,78,76,75,75,75,76,77,78,79,80,80,80',{type:'text',tip:'Comma- or space-separated benchmark prices, one per month starting at month 0. The last value is held flat.'});
+f('C','diffP','Benchmark-to-realized differential',0,{u:'$/bbl',min:-100,max:100,tip:'Realized price = benchmark - differential (floored at 0).'});
+f('C','evOn','Dated price event',false,{type:'chk',tip:'Shifts the path so that the price on the event day equals the event price; the path keeps its shape afterwards. Applies to both alternatives.'});
+f('C','evDay','Event day',14,{u:'day',min:0,max:3650});
+f('C','evPrice','Event price',75,{u:'$/bbl',min:0,max:500});
+f('D','recSel','Selected recovery method','elev',{type:'sel',opts:[['elev','Elevated'],['grad','Gradual']]});
+f('D','recPct','Deferred production recovered',80,{u:'%',min:0,max:100,tip:'Share of shutdown-deferred barrels that is recoverable after restart. The remainder is permanently unrecovered.'});
+f('D','elevDays','Elevated recovery duration',30,{u:'days',min:1,max:3650});
+f('D','gradDays','Gradual recovery duration',90,{u:'days',min:1,max:3650});
+f('D','maxCap','Maximum recovery capacity (total rate)',0,{u:'bbl/d (0 = unlimited)',min:0,max:1e7,tip:'Cap on baseline + recovery rate. If the cap binds, recovery continues beyond the nominal window until the recoverable volume is produced or the horizon ends.'});
+f('E','rfOn','Enable refrac (selected scenario)',false,{type:'chk'});
+f('E','rfM','Refrac start month',12,{u:'month',min:0,max:120});
+f('E','rfQ','Incremental initial production',500,{u:'bbl/d',min:0,max:1e6});
+f('E','rfD','Incremental monthly decline (effective)',3,{u:'%/mo',min:0,max:50});
+f('E','rfCost','Refrac capital cost',1500000,{u:'$',min:0,max:1e9});
+f('E','rfDays','Refrac operation duration',10,{u:'days',min:0,max:365,tip:'Refrac production starts when the operation ends.'});
+f('E','rfAffects','Refrac shuts in original production during operation',true,{type:'chk'});
+f('E','rfProb','Probability refrac occurs (weighting only)',50,{u:'%',min:0,max:100});
+f('F','dvOn','Enable new development (selected scenario)',false,{type:'chk'});
+f('F','dvM','Development start month',12,{u:'month',min:0,max:120});
+f('F','dvQ','Additional production',300,{u:'bbl/d',min:0,max:1e6});
+f('F','dvD','Development monthly decline (effective)',3,{u:'%/mo',min:0,max:50});
+f('F','dvCost','Development capital cost',3000000,{u:'$',min:0,max:1e9});
+f('F','dvAffected','Development flows through the repaired pipeline',true,{type:'chk',tip:'If checked, development production is interrupted by the repair shutdown and is subject to the same recovery rules.'});
+f('F','dvProb','Probability development occurs (weighting only)',50,{u:'%',min:0,max:100});
+f('G','pof0','Annual PoF before repair',2,{u:'%/yr',min:0,max:99.9});
+f('G','riskMode','Pre-repair risk trend','inc',{type:'sel',opts:[['const','Constant'],['inc','Increasing with time']]});
+f('G','riskEsc','Risk escalation during deferral',10,{u:'%/yr (relative)',min:0,max:500,tip:'Pre-repair annual PoF grows as PoF0 x (1+g)^(t/365.25), capped at 99.9%.'});
+f('G','pof1','Annual PoF after repair',0.2,{u:'%/yr',min:0,max:99.9});
+f('G','eff','Repair effectiveness',100,{u:'%',min:0,max:100,tip:'Post-repair PoF = eff x PoF_after + (1 - eff) x PoF_before.'});
+f('G','consq','Failure consequence cost',2000000,{u:'$',min:0,max:1e10,tip:'Third-party, regulatory and asset damage cost per failure (excluding the items below).'});
+f('G','emerg','Emergency repair cost',750000,{u:'$',min:0,max:1e10});
+f('G','cleanup','Cleanup / environmental cost',1000000,{u:'$',min:0,max:1e10});
+f('G','fDays','Failure-related shutdown duration',30,{u:'days',min:0,max:365,tip:'Production lost during a failure outage is valued at the netback and treated as unrecovered.'});
+f('G','fStreams','Production streams affected by failure','shut',{type:'sel',opts:[['shut','Same streams as repair shutdown'],['well','Base + refrac only'],['all','All streams']]});
+f('H','varOpex','Variable operating cost',15,{u:'$/bbl',min:0,max:500});
+f('H','fixOpex','Fixed operating cost',50000,{u:'$/month',min:0,max:1e9,tip:'Incurred every day including shutdown days; identical in both alternatives, so it cancels in incremental NPV.'});
+f('H','roy','Royalty',12.5,{u:'% of revenue',min:0,max:100});
+f('H','tax','Production tax',4.6,{u:'% of revenue net of royalty',min:0,max:100});
+f('I','maxDefer','Maximum permissible deferral',24,{u:'months',min:0,max:24,tip:'Integrity / regulatory limit. Deferrals beyond this are inadmissible and excluded from optimization.'});
+f('I','mandRepair','Repair is mandatory now (integrity/regulatory)',false,{type:'chk',tip:'When checked, deferral is integrity-prohibited for every scenario. Economics remain visible as hypothetical.'});
+f('I','matAbs','Materiality floor (absolute)',100000,{u:'$',min:1,max:1e9,tip:'Smallest NPV difference management treats as decision-relevant, regardless of asset size.'});
+f('I','matPct','Materiality relative to asset value',1,{u:'% of NPV (repair now)',min:0,max:100,tip:'Scales the threshold to the asset: a difference smaller than this share of the asset NPV is treated as noise.'});
+f('I','domMult','Dominance multiple',3,{u:'x threshold',min:1,max:100,tip:'|dNPV| at or above this multiple of the materiality threshold is a dominant (strong) preference; between 1x and this multiple is moderate.'});
+f('I','robPct','Robustness requirement',80,{u:'% of scenario probability agreeing',min:50,max:100,tip:'A material preference is called robust only if scenarios carrying at least this share of probability point the same way and no single tornado swing reverses it.'});
+f('I','tailPoF','Tail-risk flag: cumulative PoF during deferral',1,{u:'%',min:0,max:100,tip:'Flags deferral when the chance of at least one failure before the deferred repair reaches this level, even if expected values are close.'});
+f('J','wDecl','P(declining price)',40,{u:'%',min:0,max:100});
+f('J','wFlat','P(flat price)',35,{u:'%',min:0,max:100});
+f('J','wInc','P(increasing price)',25,{u:'%',min:0,max:100});
+f('J','jointMode','Refrac/development probability model','indep',{type:'sel',opts:[['indep','Independent (uses E/F probabilities)'],['joint','Explicit joint probabilities']]});
+f('J','j00','Joint P(no refrac, no dev.)',25,{u:'%',min:0,max:100});
+f('J','j10','Joint P(refrac only)',25,{u:'%',min:0,max:100});
+f('J','j01','Joint P(development only)',25,{u:'%',min:0,max:100});
+f('J','j11','Joint P(refrac + dev.)',25,{u:'%',min:0,max:100});
+const DEF={};SCH.forEach(s=>DEF[s.id]=s.def);
+
+function buildForm(){
+ const host=$('#formHost');
+ GROUPS.forEach(([g,name])=>{
+  const d=document.createElement('details');d.className='grp';d.open=true;d.dataset.g=g;
+  d.innerHTML='<summary>'+g+'. '+esc(name)+'</summary><div class="grid"></div>';
+  const grid=d.querySelector('.grid');
+  SCH.filter(s=>s.g===g).forEach(s=>{
+   let ctl;
+   if(s.type==='sel')ctl='<select id="in_'+s.id+'">'+s.opts.map(o=>'<option value="'+o[0]+'">'+esc(o[1])+'</option>').join('')+'</select>';
+   else if(s.type==='chk')ctl='<input type="checkbox" id="in_'+s.id+'">';
+   else if(s.type==='date')ctl='<input type="date" id="in_'+s.id+'">';
+   else if(s.type==='text')ctl='<textarea id="in_'+s.id+'" rows="2"></textarea>';
+   else ctl='<input type="number" id="in_'+s.id+'" step="'+(s.step||'any')+'"'+(s.min!=null?' min="'+s.min+'"':'')+(s.max!=null?' max="'+s.max+'"':'')+'>';
+   const el=document.createElement('label');el.className='fld';
+   el.innerHTML='<span class="ln">'+esc(s.label)+(s.tip?' <i class="q" data-tip="'+esc(s.tip)+'" aria-label="'+esc(s.tip)+'">?</i>':'')+'</span><span class="ctl">'+ctl+(s.u?'<em>'+esc(s.u)+'</em>':'')+'</span><span class="err" id="er_'+s.id+'"></span>';
+   grid.appendChild(el);
+  });
+  if(g==='D'){const x=document.createElement('div');x.className='note';x.id='recInfo';grid.appendChild(x);}
+  host.appendChild(d);
+ });
+}
+function writeForm(v){SCH.forEach(s=>{const e=$('#in_'+s.id);if(!e)return;const val=v[s.id]!==undefined?v[s.id]:s.def;if(s.type==='chk')e.checked=!!val;else e.value=val;});}
+function readForm(){
+ const p={},errs=[];
+ SCH.forEach(s=>{
+  const e=$('#in_'+s.id);let v;const er=$('#er_'+s.id);er.textContent='';e.classList.remove('bad');
+  if(s.type==='chk')v=e.checked;
+  else if(s.type==='sel'||s.type==='text')v=e.value;
+  else if(s.type==='date'){v=e.value;if(!/^\d{4}-\d{2}-\d{2}$/.test(v)){v=s.def;er.textContent='Invalid date; default used';errs.push(s.label);}}
+  else{v=parseFloat(e.value);
+   if(!isFinite(v)){er.textContent='Not a number; default used';e.classList.add('bad');errs.push(s.label);v=s.def;}
+   else if((s.min!=null&&v<s.min)||(s.max!=null&&v>s.max)){er.textContent='Allowed '+s.min+' to '+s.max+'; clamped';e.classList.add('bad');errs.push(s.label);v=Math.min(s.max,Math.max(s.min,v));}
+   if(s.int)v=Math.round(v);}
+  p[s.id]=v;
+ });
+ if(s_customBad(p.custom)){$('#er_custom').textContent='Need at least one valid price';errs.push('User-defined prices');}
+ if(p.deferM*DPM>=cal(p.start,p.months).D){$('#er_deferM').textContent='Deferred repair falls beyond the forecast horizon';errs.push('Deferral beyond horizon');}
+ const ws=p.wDecl+p.wFlat+p.wInc;if(Math.abs(ws-100)>0.01){$('#er_wInc').textContent='Price probabilities sum to '+ws.toFixed(1)+'%';}
+ if(p.jointMode==='joint'){const js=p.j00+p.j10+p.j01+p.j11;if(Math.abs(js-100)>0.01)$('#er_j11').textContent='Joint probabilities sum to '+js.toFixed(1)+'%';}
+ return {p,errs};
+}
+
+/* =====================================================================
+   2. CALENDAR + OIL-PRICE FORECASTING
+   ===================================================================== */
+const calCache={};
+function cal(start,months){
+ const key=start+'|'+months;if(calCache[key])return calCache[key];
+ let s=new Date(start+'T00:00:00Z');if(isNaN(s))s=new Date(Date.UTC(2026,0,1));
+ const y=s.getUTCFullYear(),m=s.getUTCMonth(),d=s.getUTCDate(),st=[],lab=[];
+ for(let k=0;k<=months;k++){const yy=y+Math.floor((m+k)/12),mm=(m+k)%12,dim=new Date(Date.UTC(yy,mm+1,0)).getUTCDate(),dd=Math.min(d,dim);
+  st.push(Math.round((Date.UTC(yy,mm,dd)-s.getTime())/864e5));lab.push(yy+'-'+String(mm+1).padStart(2,'0')+'-'+String(dd).padStart(2,'0'));}
+ const D=st[months],mi=new Int16Array(D);for(let k=0;k<months;k++)for(let t=st[k];t<st[k+1];t++)mi[t]=k;
+ const dim=st.slice(1).map((v,i)=>v-st[i]);
+ return calCache[key]={D,st,lab,mi,dim,months};
+}
+function parseCustom(s){return String(s||'').split(/[\s,;]+/).map(Number).filter(v=>isFinite(v)&&v>=0&&String(v)!=='');}
+function s_customBad(s){return parseCustom(s).length===0;}
+function knotFn(xs,ys,lin){return m=>{if(m<=xs[0])return ys[0];for(let i=1;i<xs.length;i++){if(m<xs[i])return lin?ys[i-1]+(ys[i]-ys[i-1])*(m-xs[i-1])/(xs[i]-xs[i-1]):ys[i-1];}return ys[ys.length-1];};}
+function anchors(p,key){const P0=p.P0;switch(key){
+ case 'decl':return [P0,p.decl12,p.decl24,p.decl36];case 'inc':return [P0,p.inc12,p.inc24,p.inc36];
+ case 'flat':return [P0,p.flat12,p.flat24,p.flat36];default:return [P0,P0,P0,P0];}}
+/* Benchmark price per day. Depends only on the scenario (never on the repair date). */
+function priceCurve(p){
+ const c=cal(p.start,p.months),D=c.D,a=new Float64Array(D);let fn;
+ if(p.priceAtRepair!=null&&isFinite(p.priceAtRepair)){
+  const X=p.priceAtRepair,tr=p.deferM*DPM;fn=t=>(tr<=0||t>=tr)?X:p.P0+(X-p.P0)*t/tr;
+ }else{
+  const lin=p.interp!=='step';let g;
+  if(p.priceSel==='custom'){let v=parseCustom(p.custom);if(!v.length)v=[p.P0];g=knotFn(v.map((_,i)=>i),v,lin);}
+  else g=knotFn([0,12,24,36],anchors(p,p.priceSel),lin);
+  fn=t=>g(t/DPM);
+ }
+ for(let t=0;t<D;t++)a[t]=fn(t);
+ if(p.evOn&&p.priceAtRepair==null&&p.priceSel!=='const'){const e=Math.round(p.evDay);if(e>=0&&e<D){const sh=p.evPrice-a[e];for(let t=e;t<D;t++)a[t]=Math.max(0,a[t]+sh);}}
+ return a;
+}
+
+/* =====================================================================
+   3. PRODUCTION FORECASTING (base, refrac, development)
+   ===================================================================== */
+function baseRateFn(p){
+ const d=p.decl/100,Di=p.hypDi/100,b=p.hypB,Q0=p.Q0,lnd=d<1?Math.log(1-d):-Infinity;
+ if(p.declModel==='none')return ()=>Q0;
+ if(p.declModel==='hyp')return b<1e-6?(t=>Q0*Math.exp(-Di*t/DPM)):(t=>Q0/Math.pow(1+b*Di*t/DPM,1/b));
+ return t=>d>=1?(t===0?Q0:0):Q0*Math.exp(lnd*t/DPM);
+}
+
+/* =====================================================================
+   4. DAILY CASH-FLOW ENGINE (shutdown, recovery, risk, NPV, aggregation)
+   One function; every tab, matrix row, heatmap cell and test calls it.
+   ===================================================================== */
+const MF=['days','price','base','rf','dv','baseline','aff','shutD','rec','act','rev','roy','tax','opex','rep','rfc','dvc','ncf','risk','ncfR','disc','discR'];
+function sim(p,tRep,det,win){
+ const c=cal(p.start,p.months),D=c.D,price=priceCurve(p),qB=baseRateFn(p);
+ const lnD=Math.log(1+p.disc/100)/YR,roy=p.roy/100,tax=p.tax/100;
+ const tRf=Math.round(p.rfM*DPM),tRfE=tRf+Math.round(p.rfDays),tDv=Math.round(p.dvM*DPM);
+ const S=tRep===0?p.shutDays:(p.laterShutDays>0?p.laterShutDays:p.shutDays);
+ const inH=tRep<D,tEnd=tRep+S,tRestart=Math.ceil(tEnd);
+ const recDur=p.recDurOv>0?p.recDurOv:(p.recSel==='grad'?p.gradDays:p.elevDays);
+ const recF=p.recPct/100,cap=p.maxCap>0?p.maxCap:Infinity;
+ const repCost=tRep===0?p.costNow:(p.costLater>0?p.costLater:p.costNow*Math.pow(1+p.esc/100,tRep/YR));
+ const eff=p.eff/100,pofPost=Math.min(.999,eff*p.pof1/100+(1-eff)*p.pof0/100),hPost=-Math.log(1-pofPost)/YR;
+ const Cfix=p.consq+p.emerg+p.cleanup,lnRf=Math.log(Math.max(1e-12,1-p.rfD/100)),lnDv=Math.log(Math.max(1e-12,1-p.dvD/100));
+ let deferred=0,pool=0,plan=0,started=false,recovered=0,npv=0,npvR=0,riskPV=0,cumH=0,pfMin=1,pfMax=0,sMin=1,sMax=0;
+ let rfProd=0,dvProd=0,rfCost=0,dvCost=0,repSpent=0;
+ const winD=win==null?tRep:win,midW=Math.floor(winD/2);let cumWin=0,lossMid=0,lossProd=0,dayVal0=0,nb0=0,base0=0;
+ const M=det?Array.from({length:c.months},()=>{const o={};MF.forEach(k=>o[k]=0);return o;}):null;
+ const dy=det?{price,baseline:new Float64Array(D),aff:new Float64Array(D),rec:new Float64Array(D),act:new Float64Array(D)}:null;
+ for(let t=0;t<D;t++){
+  const pr=Math.max(0,price[t]-p.diffP);
+  let qb=qB(t),qr=0,qd=0;
+  if(p.rfOn){if(p.rfAffects&&t>=tRf&&t<tRfE)qb=0;if(t>=tRfE)qr=p.rfQ*Math.exp(lnRf*(t-tRfE)/DPM);}
+  if(p.dvOn&&t>=tDv)qd=p.dvQ*Math.exp(lnDv*(t-tDv)/DPM);
+  const baseline=qb+qr+qd,affRate=qb+qr+(p.dvAffected?qd:0);
+  const fr=inH?Math.max(0,Math.min(t+1,tEnd)-Math.max(t,tRep)):0;
+  const aff=affRate*fr;deferred+=aff;
+  let rq=0;
+  if(inH&&t>=tRestart){
+   if(!started){started=true;pool=recF*deferred;plan=pool/Math.max(1e-9,recDur);}
+   if(pool>1e-9){rq=Math.min(plan,pool,Math.max(0,cap-baseline));pool-=rq;recovered+=rq;}
+  }
+  const act=baseline-aff+rq;
+  const rev=act*pr,ry=rev*roy,tx=(rev-ry)*tax,ox=act*p.varOpex+p.fixOpex/c.dim[c.mi[t]];
+  let rep=0,rfc=0,dvc=0;
+  if(inH&&t===tRep){rep=repCost;repSpent+=rep;}
+  if(p.rfOn&&t===tRf){rfc=p.rfCost;rfCost+=rfc;}
+  if(p.dvOn&&t===tDv){dvc=p.dvCost;dvCost+=dvc;}
+  const ncf=rev-ry-tx-ox-rep-rfc-dvc;
+  /* hazard: pre-repair (escalating) until repair start, zero while shut in, post-repair after restart */
+  let pa=p.pof0/100;if(p.riskMode==='inc')pa*=Math.pow(1+p.riskEsc/100,t/YR);pa=Math.min(.999,pa);
+  const hPre=-Math.log(1-pa)/YR;
+  let H;if(!inH)H=hPre;else{const preF=Math.max(0,Math.min(t+1,tRep)-t),postF=Math.max(0,t+1-Math.max(t,tEnd));H=hPre*preF+hPost*postF;}
+  const pf=1-Math.exp(-H);cumH+=H;const Sv=Math.exp(-cumH);
+  if(pf<pfMin)pfMin=pf;if(pf>pfMax)pfMax=pf;if(Sv<sMin)sMin=Sv;if(Sv>sMax)sMax=Sv;
+  const fRate=p.fStreams==='all'?baseline:p.fStreams==='well'?qb+qr:affRate;
+  const nb=Math.max(0,pr*(1-roy)*(1-tax)-p.varOpex);
+  const Cf=Cfix+p.fDays*fRate*nb,er=pf*Cf;
+  if(t===midW){lossMid=Cf;lossProd=p.fDays*fRate*nb;}if(t===0){dayVal0=baseline*nb;nb0=nb;base0=baseline;}if(t+1===winD)cumWin=cumH;
+  const df=Math.exp(-lnD*t);
+  npv+=ncf*df;npvR+=(ncf-er)*df;riskPV+=er*df;rfProd+=qr;dvProd+=qd;
+  if(det){const o=M[c.mi[t]];o.days++;o.price+=pr;o.base+=qb;o.rf+=qr;o.dv+=qd;o.baseline+=baseline;o.aff+=aff;o.shutD+=fr;o.rec+=rq;o.act+=act;o.rev+=rev;o.roy+=ry;o.tax+=tx;o.opex+=ox;o.rep+=rep;o.rfc+=rfc;o.dvc+=dvc;o.ncf+=ncf;o.risk+=er;o.ncfR+=ncf-er;o.disc+=ncf*df;o.discR+=(ncf-er)*df;
+   dy.baseline[t]=baseline;dy.aff[t]=aff;dy.rec[t]=rq;dy.act[t]=act;}
+ }
+ const r={tRep,inH,repCost:inH?repCost:0,npv,npvR,riskPV,deferred,recoverable:recF*deferred,recovered,outstanding:Math.max(0,pool),
+  lost:deferred*(1-recF),unrec:deferred-recovered,pfMin,pfMax,sMin,sMax,rfProd,dvProd,rfCost,dvCost,repSpent,cumPoFWin:1-Math.exp(-cumWin),lossMid,lossProd,dayVal0,nb0,base0};
+ if(det){let cum=0,cumR=0;M.forEach((o,k)=>{o.m=k+1;o.date=c.lab[k];o.price/=Math.max(1,o.days);cum+=o.disc;cumR+=o.discR;o.cum=cum;o.cumR=cumR;
+   const mid=(c.st[k]+c.st[k+1])/2;o.df=o.ncfR!==0?o.discR/o.ncfR:Math.exp(-lnD*mid);});r.M=M;r.dy=dy;}
+ return r;
+}
+const repairDay=p=>Math.round(p.deferM*DPM);
+function pair(p,det){const tL=repairDay(p),now=sim(p,0,det,tL),later=sim(p,tL,det,tL);return {now,later,d:later.npv-now.npv,dR:later.npvR-now.npvR,fcDef:later.riskPV-now.riskPV};}
+
+/* =====================================================================
+   5. SCENARIO GENERATOR + DECISION LOGIC
+   ===================================================================== */
+const CFG=[{rf:false,dv:false,n:'No refrac, no dev.'},{rf:true,dv:false,n:'Refrac only'},{rf:false,dv:true,n:'Development only'},{rf:true,dv:true,n:'Refrac + development'}];
+const PRN={decl:'Declining',flat:'Flat',inc:'Increasing',custom:'User-defined',const:'Constant'};
+const RCN={elev:'Elevated',grad:'Gradual'};
+function scenParams(p,ci,pk,rk,extra){return clone(p,Object.assign({rfOn:CFG[ci].rf,dvOn:CFG[ci].dv,priceSel:pk,recSel:rk},extra||{}));}
+/* Materiality threshold: an NPV difference only matters relative to the size of the asset */
+function matThr(p,npvNow){return Math.max(p.matAbs,p.matPct/100*Math.abs(npvNow||0),1);}
+function decide(dR,p,flag,npvNow){
+ const M=matThr(p,npvNow),k=Math.abs(dR)/M,adm=p.deferM<=p.maxDefer&&!p.mandRepair&&flag!=='prohib',b={k,M};
+ if(repairDay(p)>=cal(p.start,p.months).D)return Object.assign({t:'Not evaluable (deferred repair beyond horizon)',c:'x',adm:false,tier:-1},b);
+ if(flag==='tech')return Object.assign({t:'Technically infeasible - review',c:'x',adm:false,tier:-1},b);
+ if(k<1)return Object.assign({t:adm?'Equivalent - deferral acceptable':'Equivalent - repair now (deferral not permitted)',c:'a',adm,tier:0},b);
+ const tier=k>=p.domMult?2:1,lb=tier===2?'Dominant: ':'Moderate: ';
+ if(dR>0){if(!adm)return Object.assign({t:'Repair now (deferral inadmissible)',c:'r',adm:false,hyp:true,tier},b);return Object.assign({t:lb+'defer repair',c:'g',adm:true,tier},b);}
+ return Object.assign({t:lb+'repair now',c:'r',adm,tier},b);
+}
+/* Significance: is the difference large enough, robust enough and driven by one dominant factor? */
+function significance(p){
+ const s=R.sel,d=R.dec,M=d.M,dR=s.dR,dir=dR>=0?1:-1,np=Math.abs(s.now.npvR)||1,dv=s.now.dayVal0||1;
+ const sc={dR,M,k:d.k,pct:dR/np*100,xRep:dR/Math.max(1,p.costNow),days:dR/dv,bbl:dR/(s.now.nb0||1),thrPct:M/np*100,thrDays:M/dv,dayVal:dv};
+ const pw=R.pw;let wa=0,we=0,wo=0;pw.sub.forEach(r=>{const w=pw.wp[r.pk]*pw.wc[r.ci],Mi=matThr(p,r.r.now.npvR),v=r.r.dR;if(Math.abs(v)<Mi)we+=w;else if((v>0?1:-1)===dir)wa+=w;else wo+=w;});
+ const W=pw.W||1;wa/=W;we/=W;wo/=W;
+ const T=R.tor;let tlo=T.base,thi=T.base;T.rows.forEach(r=>{tlo=Math.min(tlo,r.va,r.vb);thi=Math.max(thi,r.va,r.vb);});
+ const rev=d.tier>=1?T.rows.filter(r=>r.va*dir<=-M||r.vb*dir<=-M):T.rows.filter(r=>Math.abs(r.va)>=M||Math.abs(r.vb)>=M);
+ const st=R.wf.steps,abs=st.reduce((a,x)=>a+Math.abs(x[1]),0)||1,ord=st.slice().sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));
+ const top=ord[0],share=Math.abs(top[1])/abs;
+ const robust=d.tier>=1?(wa>=p.robPct/100&&rev.length===0):(we>=p.robPct/100&&rev.length===0);
+ let head,cls;
+ if(d.tier<0){head=d.t;cls='a';}
+ else if(d.tier===0){head='OPTIONS ARE ECONOMICALLY EQUIVALENT';cls='a';}
+ else{const act=dR>0?(d.adm?'DEFER THE REPAIR':'REPAIR NOW (deferral not permitted)'):'REPAIR NOW';head=(robust?(d.tier===2?'DOMINANT':'CLEAR'):'CONDITIONAL')+' PREFERENCE: '+act;cls=robust?(dR>0&&d.adm?'g':'r'):'a';}
+ return {tier:d.tier,robust,head,cls,sc,wa,we,wo,tlo,thi,rev,top,share,ord};
+}
+let ST={tab:'inputs',flags:{},names:{},unsel:{},filters:{},tor:null};
+function buildMatrix(p){
+ const rows=[];let k=0;
+ CFG.forEach((cf,ci)=>['decl','flat','inc'].forEach(pk=>['elev','grad'].forEach(rk=>{k++;const id='S'+String(k).padStart(2,'0');
+  const q=scenParams(p,ci,pk,rk),r=pair(q);rows.push({id,ci,pk,rk,q,r,nodecl:false});})));
+ return rows;
+}
+function buildNoDecl(p){const rows=[];let k=0;
+ CFG.forEach((cf,ci)=>['decl','flat','inc'].forEach(pk=>['elev','grad'].forEach(rk=>{k++;const q=scenParams(p,ci,pk,rk,{declModel:'none'});rows.push({id:'N'+String(k).padStart(2,'0'),ci,pk,rk,q,r:pair(q),nodecl:true});})));return rows;}
+function selKey(p){return CFG.findIndex(c=>c.rf===!!p.rfOn&&c.dv===!!p.dvOn)+'|'+p.priceSel+'|'+p.recSel;}
+function selName(p){return CFG.find(c=>c.rf===!!p.rfOn&&c.dv===!!p.dvOn).n+' / '+PRN[p.priceSel]+' price / '+RCN[p.recSel]+' recovery';}
+function selId(p){if(!R.mx)return '';const r=R.mx.find(r=>r.ci+'|'+r.pk+'|'+r.rk===selKey(p));return r?r.id:'Custom';}
+function weights(p){
+ const wp={decl:p.wDecl/100,flat:p.wFlat/100,inc:p.wInc/100};let wc;
+ if(p.jointMode==='joint')wc=[p.j00,p.j10,p.j01,p.j11].map(v=>v/100);
+ else{const a=p.rfProb/100,b=p.dvProb/100;wc=[(1-a)*(1-b),a*(1-b),(1-a)*b,a*b];}
+ return {wp,wc};
+}
+function probWeighted(p,rows){
+ const {wp,wc}=weights(p);const sub=rows.filter(r=>r.rk===p.recSel);let E={now:0,later:0,d:0,nowR:0,laterR:0,dR:0},W=0;
+ sub.forEach(r=>{const w=wp[r.pk]*wc[r.ci];W+=w;E.now+=w*r.r.now.npv;E.later+=w*r.r.later.npv;E.d+=w*r.r.d;E.nowR+=w*r.r.now.npvR;E.laterR+=w*r.r.later.npvR;E.dR+=w*r.r.dR;});
+ const ds=sub.map(r=>r.r.dR),best=sub[ds.indexOf(Math.max(...ds))],worst=sub[ds.indexOf(Math.min(...ds))];
+ return {E,W,sub,best,worst,wp,wc};
+}
+
+/* Sequential attribution of incremental NPV; reconciles exactly by construction */
+function attribution(p){
+ const q=clone(p,{declModel:'none',priceSel:'const',priceAtRepair:null,evOn:false,recDurOv:1,maxCap:0,esc:0,costLater:0,rfOn:false,dvOn:false});
+ const steps=[];let prev=pair(q).d;steps.push(['Shutdown timing & discounting',prev]);
+ [['Production decline',x=>{x.declModel=p.declModel;}],['Oil-price path',x=>{x.priceSel=p.priceSel;x.priceAtRepair=p.priceAtRepair==null?null:p.priceAtRepair;x.evOn=p.evOn;}],
+  ['Recovery timing & capacity',x=>{x.recDurOv=p.recDurOv||0;x.maxCap=p.maxCap;}],['Repair-cost escalation',x=>{x.esc=p.esc;x.costLater=p.costLater;}],
+  ['Refrac & development',x=>{x.rfOn=p.rfOn;x.dvOn=p.dvOn;}]].forEach(([n,fn])=>{fn(q);const v=pair(q).d;steps.push([n,v-prev]);prev=v;});
+ const fin=pair(p);steps.push(['Failure-risk cost',fin.dR-fin.d]);
+ const sum=steps.reduce((a,s)=>a+s[1],0);
+ return {steps,total:fin.dR,recon:Math.abs(sum-fin.dR)};
+}
+
+/* =====================================================================
+   6. SENSITIVITY ENGINE + DECISION BOUNDARY SOLVER
+   ===================================================================== */
+const VARS={
+ price:{l:'Oil price at deferred repair date ($/bbl)',lo:40,hi:120,ap:(p,v)=>{p.priceAtRepair=v;},f:v=>'$'+v.toFixed(0)},
+ decl:{l:'Monthly production decline (%/mo)',lo:0,hi:8,ap:(p,v)=>{p.decl=v;if(p.declModel==='none')p.declModel='exp';if(p.declModel==='hyp')p.hypDi=v<100?-Math.log(1-v/100)*100:p.hypDi;},f:v=>v.toFixed(2)+'%'},
+ pof:{l:'Annual PoF before repair (%/yr)',lo:0,hi:20,ap:(p,v)=>{p.pof0=v;},f:v=>v.toFixed(2)+'%'},
+ consq:{l:'Failure consequence ($)',lo:0,hi:10e6,ap:(p,v)=>{p.consq=v;},f:fmtM},
+ cost:{l:'Repair cost today ($)',lo:0,hi:2e6,ap:(p,v)=>{p.costNow=v;},f:fmtM},
+ rec:{l:'Recovery percentage (%)',lo:0,hi:100,ap:(p,v)=>{p.recPct=v;},f:v=>v.toFixed(1)+'%'},
+ shut:{l:'Shutdown duration (days)',lo:0,hi:60,ap:(p,v)=>{p.shutDays=v;},f:v=>v.toFixed(1)+' d'},
+ defer:{l:'Repair deferral (months)',lo:1,hi:24,ap:(p,v)=>{p.deferM=v;},f:v=>v.toFixed(2)+' mo'},
+ disc:{l:'Discount rate (%/yr)',lo:0,hi:25,ap:(p,v)=>{p.disc=v;},f:v=>v.toFixed(1)+'%'}
+};
+function gridCompute(p,xv,yv,nx,ny,xr,yr){
+ const X=VARS[xv],Y=VARS[yv],xs=linspace(xr?xr[0]:X.lo,xr?xr[1]:X.hi,nx),ys=linspace(yr?yr[0]:Y.lo,yr?yr[1]:Y.hi,ny),z=[],cells=[];
+ for(let iy=0;iy<ny;iy++){z.push([]);cells.push([]);for(let ix=0;ix<nx;ix++){const q=clone(p);X.ap(q,xs[ix]);Y.ap(q,ys[iy]);const r=pair(q);z[iy].push(r.dR);cells[iy].push({now:r.now.npvR,later:r.later.npvR,d:r.d,dR:r.dR,fc:r.fcDef,q});}}
+ return {xv,yv,xs,ys,z,cells,nx,ny};
+}
+function hasZero(z){let pos=false,neg=false;z.forEach(r=>r.forEach(v=>{if(v>0)pos=true;if(v<0)neg=true;}));return pos&&neg;}
+/* scan + bisection; returns all roots inside the range, each verified */
+function breakEven(p,vk,lo,hi,n){
+ const V=VARS[vk],fn=x=>{const q=clone(p);V.ap(q,x);return pair(q).dR;};
+ const xs=linspace(lo,hi,n||49),ys=xs.map(fn),roots=[];let scale=Math.max(...ys.map(Math.abs),1);
+ for(let i=0;i<xs.length-1;i++){
+  const a=ys[i],b=ys[i+1];if(a===0){roots.push({x:xs[i],f:0,up:b>0});continue;}
+  if(a*b<0){let x0=xs[i],x1=xs[i+1],f0=a;for(let k=0;k<60;k++){const xm=(x0+x1)/2,fm=fn(xm);if(fm===0){x0=x1=xm;break;}if(fm*f0<0)x1=xm;else{x0=xm;f0=fm;}if(x1-x0<1e-9*Math.max(1,Math.abs(hi-lo)))break;}
+   const x=(x0+x1)/2,fx=fn(x);roots.push({x,f:fx,up:b>a,ok:Math.abs(fx)<=Math.max(50,1e-4*scale)});}
+ }
+ if(Math.abs(ys[ys.length-1])===0)roots.push({x:xs[xs.length-1],f:0,ok:true});
+ return {roots,ys,xs,lo,hi};
+}
+function optimizeTiming(p){
+ const now=sim(p,0),out=[];
+ for(let m=0;m<=24;m++){const q=clone(p,{deferM:m});const l=sim(q,repairDay(q));out.push({m,npvR:l.npvR,npv:l.npv,adm:m<=p.maxDefer&&!(p.mandRepair&&m>0),inH:l.inH});}
+ out[0].npvR=now.npvR;out[0].npv=now.npv;
+ const adm=out.filter(o=>o.adm&&o.inH);const best=adm.length?adm.reduce((a,b)=>b.npvR>a.npvR?b:a):null;
+ const all=out.reduce((a,b)=>b.npvR>a.npvR?b:a);
+ return {out,best,all};
+}
+const TOR_DEF=[['price','Oil price at repair date ($/bbl)',60,100],['decl','Production decline (%/mo)',0.5,5],['rec','Recovery percentage (%)',50,100],['recDur','Recovery duration (days)',15,120],['shut','Shutdown duration (days)',7,28],['cost','Repair cost ($)',250000,1000000],['defer','Repair deferral (months)',6,24],['pof','Annual PoF before repair (%/yr)',0.5,10],['consq','Failure consequence ($)',500000,10000000],['rfQ','Refrac uplift (bbl/d)',250,1000],['dvQ','Development uplift (bbl/d)',150,600]];
+const TOR_AP={recDur:(p,v)=>{p.recDurOv=v;},rfQ:(p,v)=>{p.rfQ=v;},dvQ:(p,v)=>{p.dvQ=v;}};
+function tornado(p){
+ const base=pair(p).dR;
+ return {base,rows:ST.tor.map(([k,l,lo,hi])=>{const ap=TOR_AP[k]||VARS[k].ap;const a=clone(p),b=clone(p);ap(a,lo);ap(b,hi);const va=pair(a).dR,vb=pair(b).dR;return {k,label:l,lo,hi,va,vb,sw:Math.abs(vb-va)};}).sort((x,y)=>y.sw-x.sw)};
+}
+
+/* =====================================================================
+   7. CHART RENDERING (dependency-free canvas)
+   ===================================================================== */
+function prep(el){const w=el.clientWidth,h=el.clientHeight;if(!w||!h)return null;let cv=el.querySelector('canvas');if(!cv){cv=document.createElement('canvas');el.appendChild(cv);}
+ const dpr=window.devicePixelRatio||1;cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);cv.style.width=w+'px';cv.style.height=h+'px';const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);g.font='11px system-ui,sans-serif';return {cv,g,w,h};}
+function nice(lo,hi,n){if(!(hi>lo)){lo-=1;hi+=1;}const st0=(hi-lo)/Math.max(1,n),mag=Math.pow(10,Math.floor(Math.log10(st0))),r=st0/mag,st=(r<1.5?1:r<3?2:r<7?5:10)*mag;const a=Math.floor(lo/st+1e-9)*st,b=Math.ceil(hi/st-1e-9)*st,t=[];for(let v=a;v<=b+st*1e-6;v+=st)t.push(+v.toFixed(10));return {lo:a,hi:b,ticks:t};}
+function legend(c,items){const g=c.g;let x=8,y=10,rows=1;g.textBaseline='middle';g.textAlign='left';items.forEach(it=>{const tw=g.measureText(it.name).width+28;if(x+tw>c.w-8&&x>8){x=8;y+=15;rows++;}g.strokeStyle=it.color;g.fillStyle=it.color;g.lineWidth=2;g.setLineDash(it.dash||[]);if(it.box)g.fillRect(x,y-5,12,10);else{g.beginPath();g.moveTo(x,y);g.lineTo(x+16,y);g.stroke();}g.setLineDash([]);g.fillStyle='#334';g.fillText(it.name,x+20,y);x+=tw;});return rows*15+6;}
+function axes(c,o){
+ const g=c.g,L=o.L||64,R=o.R||14,T=o.T||10,B=o.B||(o.xTitle?42:28),pw=Math.max(10,c.w-L-R),ph=Math.max(10,c.h-T-B);
+ let lo=o.ylo,hi=o.yhi;if(!isFinite(lo)||!isFinite(hi)){lo=0;hi=1;}if(o.zero){lo=Math.min(0,lo);hi=Math.max(0,hi);}
+ const ny=nice(lo,hi,Math.max(2,Math.floor(ph/38))),Y=v=>T+ph-(v-ny.lo)/(ny.hi-ny.lo)*ph,X=v=>L+(v-o.xlo)/((o.xhi-o.xlo)||1)*pw;
+ g.lineWidth=1;g.textAlign='right';g.textBaseline='middle';
+ ny.ticks.forEach(v=>{const y=Y(v);g.strokeStyle='#e6e9ef';g.beginPath();g.moveTo(L,y);g.lineTo(L+pw,y);g.stroke();g.fillStyle='#5a6475';g.fillText(o.yFmt&&o.yFmt!==fmtS?o.yFmt(v):fmtTick(v,ny.ticks[1]-ny.ticks[0]),L-5,y);});
+ if(ny.lo<0&&ny.hi>0){g.strokeStyle='#7f8899';g.beginPath();g.moveTo(L,Y(0));g.lineTo(L+pw,Y(0));g.stroke();}
+ g.strokeStyle='#a4acba';g.strokeRect(L+.5,T+.5,pw,ph);
+ g.textAlign='center';g.textBaseline='top';g.fillStyle='#5a6475';
+ if(o.xTicks)o.xTicks.forEach(([v,l])=>g.fillText(l,X(v),T+ph+5));
+ else if(!o.noX){const nx=nice(o.xlo,o.xhi,Math.max(2,Math.floor(pw/70)));nx.ticks.filter(v=>v>=o.xlo-1e-9&&v<=o.xhi+1e-9).forEach(v=>g.fillText(o.xFmt&&o.xFmt!==fmtS?o.xFmt(v):fmtTick(v,nx.ticks[1]-nx.ticks[0]),X(v),T+ph+5));}
+ if(o.xTitle)g.fillText(o.xTitle,L+pw/2,T+ph+21);
+ if(o.yTitle){g.save();g.translate(11,T+ph/2);g.rotate(-Math.PI/2);g.textBaseline='middle';g.fillText(o.yTitle,0,0);g.restore();}
+ return {L,T,pw,ph,X,Y};
+}
+function lineChart(el,o){
+ const c=prep(el);if(!c)return;const lh=legend(c,o.series.concat(o.extraLegend||[]));let lo=Infinity,hi=-Infinity;
+ o.series.forEach(s=>{for(const v of s.y)if(isFinite(v)){if(v<lo)lo=v;if(v>hi)hi=v;}});(o.points||[]).forEach(p=>{lo=Math.min(lo,p.y);hi=Math.max(hi,p.y);});
+ const xlo=o.x[0],xhi=o.x[o.x.length-1],pad=(hi-lo)*0.04||1;if(o.floor0&&lo>=0)lo=pad;
+ const a=axes(c,{T:lh+4,ylo:lo-pad,yhi:hi+pad,xlo,xhi,yFmt:o.yFmt,xFmt:o.xFmt,xTitle:o.xTitle,yTitle:o.yTitle,zero:o.zero});const g=c.g;
+ g.save();g.beginPath();g.rect(a.L,a.T,a.pw,a.ph);g.clip();
+ (o.shade||[]).forEach(s=>{g.fillStyle=s.color;g.fillRect(a.X(s.x0),a.T,a.X(s.x1)-a.X(s.x0),a.ph);});
+ o.series.forEach(s=>{g.strokeStyle=s.color;g.lineWidth=s.w||1.8;g.setLineDash(s.dash||[]);g.beginPath();let on=false;s.y.forEach((v,i)=>{if(!isFinite(v)){on=false;return;}const x=a.X(o.x[i]),y=a.Y(v);if(!on){g.moveTo(x,y);on=true;}else g.lineTo(x,y);});g.stroke();g.setLineDash([]);
+  if(s.dots){g.fillStyle=s.color;s.y.forEach((v,i)=>{if(isFinite(v)){g.beginPath();g.arc(a.X(o.x[i]),a.Y(v),2.6,0,7);g.fill();}});}});
+ (o.points||[]).forEach(pt=>{g.fillStyle=pt.color;g.beginPath();g.arc(a.X(pt.x),a.Y(pt.y),5.5,0,7);g.fill();g.fillStyle='#1d2433';g.textAlign=a.X(pt.x)>a.L+a.pw*0.7?'right':'left';g.textBaseline='bottom';g.fillText(pt.label,a.X(pt.x)+(g.textAlign==='left'?8:-8),a.Y(pt.y)-6);});
+ g.restore();
+ el._hit=(mx,my)=>{if(mx<a.L||mx>a.L+a.pw||my<a.T||my>a.T+a.ph)return null;const xv=xlo+(mx-a.L)/a.pw*(xhi-xlo);let lo2=0,hi2=o.x.length-1;while(hi2-lo2>1){const m=(lo2+hi2)>>1;if(o.x[m]<xv)lo2=m;else hi2=m;}const bi=Math.abs(o.x[lo2]-xv)<Math.abs(o.x[hi2]-xv)?lo2:hi2;
+  return '<b>'+(o.xHover||o.xFmt||fmtS)(o.x[bi])+'</b><br>'+o.series.map(s=>'<span style="color:'+s.color+'">&#9632;</span> '+esc(s.name)+': '+(o.yHover||o.yFmt||fmtS)(s.y[bi])).join('<br>');};
+}
+function barChart(el,o){
+ const c=prep(el);if(!c)return;const lh=legend(c,o.series.map(s=>({name:s.name,color:s.color,box:true})));const n=o.labels.length,ns=o.series.length;
+ let lo=0,hi=0;o.series.forEach(s=>s.y.forEach(v=>{if(isFinite(v)){lo=Math.min(lo,v);hi=Math.max(hi,v);}}));
+ const every=Math.max(1,Math.ceil(n/Math.max(1,Math.floor((c.w-80)/44))));
+ const a=axes(c,{T:lh+4,ylo:lo,yhi:hi,xlo:0,xhi:n,yFmt:o.yFmt,zero:true,xTicks:o.labels.map((l,i)=>[i+0.5,i%every===0?l:'']).filter(t=>t[1]!==''),xTitle:o.xTitle});const g=c.g,bw=a.pw/n,iw=bw*0.8/ns;
+ o.series.forEach((s,si)=>{g.fillStyle=s.color;s.y.forEach((v,i)=>{if(!isFinite(v))return;const x=a.L+i*bw+bw*0.1+si*iw,y0=a.Y(0),y1=a.Y(v);g.fillRect(x,Math.min(y0,y1),Math.max(1,iw-1),Math.max(0.5,Math.abs(y1-y0)));});});
+ el._hit=(mx,my)=>{if(mx<a.L||mx>a.L+a.pw||my<a.T||my>a.T+a.ph)return null;const i=Math.min(n-1,Math.floor((mx-a.L)/bw));return '<b>'+esc(o.labels[i])+'</b><br>'+o.series.map(s=>'<span style="color:'+s.color+'">&#9632;</span> '+esc(s.name)+': '+(o.yHover||fmtD)(s.y[i])).join('<br>');};
+}
+function wrapText(g,t,maxw){const w=t.split(' '),L=[];let cur='';w.forEach(x=>{const tr=cur?cur+' '+x:x;if(g.measureText(tr).width>maxw&&cur){L.push(cur);cur=x;}else cur=tr;});if(cur)L.push(cur);return L;}
+function waterfall(el,steps,totalLabel){
+ const c=prep(el);if(!c)return;const n=steps.length+1;let cum=0,lo=0,hi=0;const bars=steps.map(([l,v])=>{const a=cum;cum+=v;lo=Math.min(lo,a,cum);hi=Math.max(hi,a,cum);return {l,v,a,b:cum};});bars.push({l:totalLabel,v:cum,a:0,b:cum,tot:true});
+ const a=axes(c,{T:10,B:48,ylo:lo,yhi:hi,xlo:0,xhi:n,zero:true,noX:true,yFmt:fmtS});const g=c.g,bw=a.pw/n;
+ bars.forEach((b,i)=>{const x=a.L+i*bw+bw*0.15,w=bw*0.7,y0=a.Y(b.a),y1=a.Y(b.b);g.fillStyle=b.tot?'#13233f':(b.v>=0?'#1e8449':'#c0392b');g.fillRect(x,Math.min(y0,y1),w,Math.max(1,Math.abs(y1-y0)));
+  if(i<bars.length-1){g.strokeStyle='#8a94a6';g.setLineDash([2,2]);g.beginPath();g.moveTo(x+w,y1);g.lineTo(x+bw,y1);g.stroke();g.setLineDash([]);}
+  g.fillStyle='#1d2433';g.textAlign='center';g.textBaseline='bottom';g.fillText(fmtM(b.v),x+w/2,Math.min(y0,y1)-2);
+  g.fillStyle='#5a6475';g.textBaseline='top';wrapText(g,b.l,bw-4).slice(0,3).forEach((ln,k)=>g.fillText(ln,x+w/2,a.T+a.ph+4+k*12));});
+ el._hit=(mx,my)=>{if(mx<a.L||mx>a.L+a.pw)return null;const i=Math.min(n-1,Math.floor((mx-a.L)/bw));const b=bars[i];return '<b>'+esc(b.l)+'</b><br>'+(b.tot?'Total: ':'Contribution: ')+fmtD(b.v)+(b.tot?'':'<br>Running total: '+fmtD(b.b));};
+}
+function hbars(el,o){
+ const c=prep(el);if(!c)return;const g=c.g,rows=o.rows,n=rows.length;if(!n){g.fillStyle='#5a6475';g.fillText('No rows to display',20,20);el._hit=null;return;}
+ let lab=0;rows.forEach(r=>lab=Math.max(lab,g.measureText(r.label).width));const L=Math.min(c.w*0.45,lab+14),R=16,T=o.legend?legend(c,o.legend)+4:10,B=26,pw=c.w-L-R,ph=c.h-T-B,rh=ph/n;
+ let lo=o.base,hi=o.base;rows.forEach(r=>{lo=Math.min(lo,r.a,r.b);hi=Math.max(hi,r.a,r.b);});const nx=nice(lo,hi,Math.max(2,Math.floor(pw/80))),X=v=>L+(v-nx.lo)/(nx.hi-nx.lo)*pw;
+ g.textBaseline='top';g.textAlign='center';g.lineWidth=1;nx.ticks.forEach(v=>{g.strokeStyle='#e6e9ef';g.beginPath();g.moveTo(X(v),T);g.lineTo(X(v),T+ph);g.stroke();g.fillStyle='#5a6475';g.fillText(fmtTick(v,nx.ticks[1]-nx.ticks[0]),X(v),T+ph+5);});
+ g.strokeStyle='#7f8899';g.beginPath();g.moveTo(X(o.base),T);g.lineTo(X(o.base),T+ph);g.stroke();
+ if(o.base!==0&&nx.lo<0&&nx.hi>0){g.strokeStyle='#c0392b';g.setLineDash([4,3]);g.beginPath();g.moveTo(X(0),T);g.lineTo(X(0),T+ph);g.stroke();g.setLineDash([]);}
+ rows.forEach((r,i)=>{const y=T+i*rh+rh*0.18,h=Math.max(2,rh*0.64);g.fillStyle=r.ca||'#c0392b';g.fillRect(Math.min(X(o.base),X(r.a)),y,Math.abs(X(r.a)-X(o.base))||1,h);
+  if(r.b!==r.a){g.fillStyle=r.cb||'#1e8449';g.fillRect(Math.min(X(o.base),X(r.b)),y,Math.abs(X(r.b)-X(o.base))||1,h);}
+  g.fillStyle='#1d2433';g.textAlign='right';g.textBaseline='middle';g.fillText(r.label,L-6,y+h/2);});
+ el._hit=(mx,my)=>{if(my<T||my>T+ph)return null;const i=Math.min(n-1,Math.floor((my-T)/rh));return rows[i].tip;};
+}
+function heatColor(v,s,band){if(Math.abs(v)<=band)return 'rgb(240,228,190)';const t=Math.min(1,Math.abs(v)/s);if(v>0){return 'rgb('+Math.round(232-202*t)+','+Math.round(244-112*t)+','+Math.round(234-161*t)+')';}return 'rgb('+Math.round(250-58*t)+','+Math.round(232-175*t)+','+Math.round(228-185*t)+')';}
+function contourSegs(z,nx,ny){const segs=[];for(let j=0;j<ny-1;j++)for(let i=0;i<nx-1;i++){const v00=z[j][i],v10=z[j][i+1],v11=z[j+1][i+1],v01=z[j+1][i];const P=[];
+ const e=(va,vb,xa,ya,xb,yb)=>{if((va>=0)!==(vb>=0)){const t=va/(va-vb);P.push([xa+(xb-xa)*t,ya+(yb-ya)*t]);}else P.push(null);};
+ e(v00,v10,i,j,i+1,j);e(v10,v11,i+1,j,i+1,j+1);e(v01,v11,i,j+1,i+1,j+1);e(v00,v01,i,j,i,j+1);
+ const q=P.filter(Boolean);if(q.length===2)segs.push(q);else if(q.length===4){const cc=(v00+v10+v11+v01)/4;if((cc>=0)===(v00>=0)){segs.push([P[0],P[1]]);segs.push([P[2],P[3]]);}else{segs.push([P[0],P[3]]);segs.push([P[1],P[2]]);}}}return segs;}
+function heatmap(el,G,o){
+ const c=prep(el);if(!c)return;const g=c.g,{nx,ny,xs,ys,z}=G,X=VARS[G.xv],Y=VARS[G.yv];
+ const legItems=(o.contours||[]).map(k=>({name:k.label,color:k.color,dash:k.dash}));const lh=legItems.length?legend(c,legItems):0;
+ const L=70,R=84,T=10+lh,B=40,pw=c.w-L-R,ph=c.h-T-B,cw=pw/nx,ch=ph/ny;
+ let s=o.scale||0;if(!s){z.forEach(r=>r.forEach(v=>{if(isFinite(v))s=Math.max(s,Math.abs(v));}));}s=s||1;const band=o.band||0;
+ for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){g.fillStyle=heatColor(z[j][i],s,band);g.fillRect(L+i*cw,T+ph-(j+1)*ch,Math.ceil(cw)+0.5,Math.ceil(ch)+0.5);}
+ if(o.hypoX!=null){const xi=(o.hypoX-xs[0])/(xs[nx-1]-xs[0]||1);}
+ if(o.hatch){g.fillStyle='rgba(60,60,60,.18)';for(let j=0;j<ny;j++)for(let i=0;i<nx;i++)if(o.hatch(i,j))g.fillRect(L+i*cw,T+ph-(j+1)*ch,cw,ch);}
+ g.strokeStyle='#a4acba';g.lineWidth=1;g.strokeRect(L+.5,T+.5,pw,ph);
+ const px=u=>L+(u+0.5)*cw,py=v=>T+ph-(v+0.5)*ch;
+ (o.contours||[{z,color:'#111',w:2.5}]).forEach(k=>{if(!k.z)return;g.strokeStyle=k.color;g.lineWidth=k.w||2.5;g.setLineDash(k.dash||[]);contourSegs(k.z,nx,ny).forEach(sg=>{g.beginPath();g.moveTo(px(sg[0][0]),py(sg[0][1]));g.lineTo(px(sg[1][0]),py(sg[1][1]));g.stroke();});g.setLineDash([]);});
+ g.fillStyle='#5a6475';g.textAlign='center';g.textBaseline='top';const ex=Math.max(1,Math.ceil(nx/Math.max(2,Math.floor(pw/60))));
+ xs.forEach((v,i)=>{if(i%ex===0||i===nx-1)g.fillText(X.f(v),px(i),T+ph+4);});g.fillText(X.l,L+pw/2,T+ph+20);
+ g.textAlign='right';g.textBaseline='middle';const ey=Math.max(1,Math.ceil(ny/Math.max(2,Math.floor(ph/26))));ys.forEach((v,j)=>{if(j%ey===0||j===ny-1)g.fillText(Y.f(v),L-4,py(j));});
+ g.save();g.translate(11,T+ph/2);g.rotate(-Math.PI/2);g.textAlign='center';g.fillText(Y.l,0,0);g.restore();
+ const bx=c.w-R+14,bh=ph;for(let k=0;k<bh;k++){const v=s-2*s*k/bh;g.fillStyle=heatColor(v,s,band);g.fillRect(bx,T+k,12,1.5);}g.strokeStyle='#a4acba';g.strokeRect(bx,T,12,bh);
+ g.fillStyle='#5a6475';g.textAlign='left';[s,s/2,0,-s/2,-s].forEach(v=>g.fillText(fmtM(v),bx+15,T+(s-v)/(2*s)*bh));
+ g.save();g.translate(c.w-4,T+ph/2);g.rotate(-Math.PI/2);g.textAlign='center';g.textBaseline='bottom';g.fillText('Risk-adj. dNPV (Later - Now)',0,0);g.restore();
+ el._hit=(mx,my)=>{if(mx<L||mx>L+pw||my<T||my>T+ph)return null;const i=Math.min(nx-1,Math.floor((mx-L)/cw)),j=Math.min(ny-1,Math.floor((T+ph-my)/ch));return o.info(i,j);};
+}
+
+/* =====================================================================
+   8. APPLICATION STATE, RECALC, RENDER
+   ===================================================================== */
+let P=null,R={},dirty={},tmr=null,sensTok=0,SENS=null;
+function prefTag(d){return '<span class="tag '+d.c+'">'+esc(d.t)+'</span>';}
+function recalc(){
+ const {p,errs}=readForm();P=p;
+ $('#inErrs').innerHTML=errs.length?'<span class="neg">Input validation: '+errs.length+' issue(s) &mdash; '+esc(errs.join('; '))+'. Out-of-range values are clamped; see field messages.</span>':'';
+ R.errs=errs;
+ $('#recInfo').textContent='Permanently unrecovered production: '+(100-p.recPct).toFixed(1)+'% of shutdown-deferred barrels. Illustrative (no decline): '+fmt0(p.Q0*p.shutDays)+' bbl deferred, '+fmt0(p.Q0*p.shutDays*p.recPct/100)+' recoverable = '+fmt2(p.Q0*p.shutDays*p.recPct/100/p.elevDays)+' bbl/d over '+p.elevDays+' d (elevated) or '+fmt2(p.Q0*p.shutDays*p.recPct/100/p.gradDays)+' bbl/d over '+p.gradDays+' d (gradual).';
+ R.mx=buildMatrix(p);R.nd=$('#fNoDecl').checked?buildNoDecl(p):null;
+ R.sel=pair(p,true);R.selAlt={};['elev','grad'].forEach(k=>R.selAlt[k]=k===p.recSel?R.sel:pair(clone(p,{recSel:k}),true));
+ R.wf=attribution(p);R.pw=probWeighted(p,R.mx);
+ const fl=ST.flags[selId(p)];R.dec=decide(R.sel.dR,p,fl,R.sel.now.npvR);R.decDet=decide(R.sel.d,p,fl,R.sel.now.npv);
+ R.tor=tornado(p);R.bePof=breakEven(p,'pof',0,50,25);R.sig=significance(p);
+ runValidation(false);
+ Object.keys(dirty).forEach(k=>dirty[k]=true);
+ if(SENS){SENS.stale=true;SENS.synced=null;}
+ renderStatus();renderTab(ST.tab);persist();
+}
+function schedule(){clearTimeout(tmr);tmr=setTimeout(recalc,220);}
+function persist(){store('rte_state_v1',{inputs:P,tab:ST.tab,flags:ST.flags,names:ST.names,unsel:ST.unsel,filters:{cfg:$('#fCfg').value,price:$('#fPrice').value,rec:$('#fRec').value,nodecl:$('#fNoDecl').checked,cfView:$('#cfView').value,cfRec:$('#cfRec').value},tor:ST.tor});}
+function renderStatus(){
+ const v=R.val;const d=R.dec;
+ $('#status').innerHTML='<span>Scenario: <b>'+esc(selId(P))+'</b> '+esc(selName(P))+'</span><span>Deferral: <b>'+P.deferM+' mo</b>'+(P.deferM>P.maxDefer||P.mandRepair?' <span class="tag r">inadmissible</span>':'')+'</span><span>Oil price: <b>$'+fmt2(P.P0)+'/bbl</b></span><span>Risk-adj. dNPV: <b class="'+sgn(R.sel.dR)+'">'+fmtD(R.sel.dR)+'</b></span><span>Decision: '+prefTag(d)+(R.sig&&R.sig.tier>=1?' <span class="tag '+(R.sig.robust?'g':'a')+'">'+(R.sig.robust?'robust':'assumption-dependent')+'</span>':'')+'</span><span>Validation: <b class="'+(v&&v.fail===0?'pass':'fail')+'">'+(v?(v.pass+'/'+(v.pass+v.fail)+' PASS'):'-')+'</b>'+(R.errs&&R.errs.length?' <span class="tag a">input issues</span>':'')+'</span>';
+}
+function setTab(t){ST.tab=t;$$('#tabs button').forEach(b=>{const on=b.dataset.tab===t;b.classList.toggle('on',on);b.setAttribute('aria-selected',on);});$$('.tab').forEach(s=>s.classList.toggle('on',s.id==='t-'+t));renderTab(t);persist();}
+function renderTab(t){
+ if(!P)return;
+ if(t==='matrix')renderMatrix();else if(t==='cash')renderCash();else if(t==='dash')renderDash();else if(t==='sens'){if(!SENS||SENS.stale)runSens();else renderSens();}else if(t==='meth')renderMeth();
+}
+
+/* ---------------- Scenario matrix tab ---------------- */
+let sortK='id',sortD=1;
+const MXC=[['chk','',0],['id','ID',1],['name','Scenario name',1],['cfg','Refrac',1],['dev','Development',1],['price','Price path',1],['rec','Recovery',1],['now','NPV Now',1],['later','NPV Later',1],['d','dNPV (det.)',1],['dR','Risk-adj. dNPV',1],['pct','% of NPV',1],['pref','Decision (materiality tier)',1],['flag','Status',0]];
+function mxRows(){
+ let rows=R.mx.concat(R.nd||[]);const fc=$('#fCfg').value,fp=$('#fPrice').value,fr=$('#fRec').value;
+ rows=rows.filter(r=>(fc===''||r.ci==fc)&&(fp===''||r.pk===fp)&&(fr===''||r.rk===fr));
+ const key=r=>({id:r.id,name:ST.names[r.id]||'',cfg:+CFG[r.ci].rf,dev:+CFG[r.ci].dv,price:r.pk,rec:r.rk,now:r.r.now.npvR,later:r.r.later.npvR,d:r.r.d,dR:r.r.dR,pct:r.r.dR/Math.max(1,Math.abs(r.r.now.npvR)),pref:decide(r.r.dR,r.q,ST.flags[r.id],r.r.now.npvR).t}[sortK]);
+ rows.sort((a,b)=>{const x=key(a),y=key(b);return (x>y?1:x<y?-1:0)*sortD;});return rows;
+}
+function renderMatrix(){
+ const sk=selKey(P);let h='<thead><tr>'+MXC.map(c=>'<th class="'+(c[2]?'s ':'')+(['chk','id','name','price','rec','pref','flag','cfg','dev'].includes(c[0])?'l':'')+'" data-k="'+c[0]+'">'+c[1]+(sortK===c[0]?(sortD>0?' &#9650;':' &#9660;'):'')+'</th>').join('')+'</tr></thead><tbody>';
+ mxRows().forEach(r=>{const d=decide(r.r.dR,r.q,ST.flags[r.id],r.r.now.npvR),isSel=!r.nodecl&&(r.ci+'|'+r.pk+'|'+r.rk)===sk;
+  h+='<tr class="'+(isSel?'selrow':'')+'"><td class="l"><input type="checkbox" data-sel="'+r.id+'"'+(ST.unsel[r.id]?'':' checked')+'></td><td class="l"><a href="#" data-pick="'+r.id+'">'+r.id+'</a></td><td class="l"><input type="text" data-name="'+r.id+'" value="'+esc(ST.names[r.id]||'')+'" placeholder="'+esc(CFG[r.ci].n+(r.nodecl?' (no decline)':''))+'" style="width:150px"></td><td class="l">'+(CFG[r.ci].rf?'ON':'OFF')+'</td><td class="l">'+(CFG[r.ci].dv?'ON':'OFF')+'</td><td class="l">'+PRN[r.pk]+'</td><td class="l">'+RCN[r.rk]+'</td><td>'+fmtD(r.r.now.npvR)+'</td><td>'+fmtD(r.r.later.npvR)+'</td><td class="'+sgn(r.r.d)+'">'+fmtD(r.r.d)+'</td><td class="'+sgn(r.r.dR)+'"><b>'+fmtD(r.r.dR)+'</b></td><td class="'+sgn(r.r.dR)+'">'+(r.r.dR/Math.max(1,Math.abs(r.r.now.npvR))*100).toFixed(2)+'%</td><td class="l">'+prefTag(d)+' <span class="note">'+d.k.toFixed(2)+'x</span></td><td class="l"><select data-flag="'+r.id+'"><option value="ok">OK</option><option value="tech"'+(ST.flags[r.id]==='tech'?' selected':'')+'>Tech. infeasible</option><option value="prohib"'+(ST.flags[r.id]==='prohib'?' selected':'')+'>Integrity-prohibited</option></select></td></tr>';});
+ $('#mxTable').innerHTML=h+'</tbody>';
+ {const cnt={},ds=R.mx.map(r=>({r,d:decide(r.r.dR,r.q,ST.flags[r.id],r.r.now.npvR)}));ds.forEach(x=>{cnt[x.d.t]=(cnt[x.d.t]||0)+1;});
+  const mat=ds.filter(x=>x.d.tier>=1),sk2=x=>x.r.r.dR/x.d.M,best=ds.reduce((a,b)=>sk2(b)>sk2(a)?b:a),worst=ds.reduce((a,b)=>sk2(b)<sk2(a)?b:a);
+  $('#mxSum').innerHTML='<div class="verdict '+(mat.length?'g':'a')+'" style="margin:0 0 8px"><b>Decision point:</b> '+mat.length+' of 24 comparisons show a material preference (|dNPV| &ge; threshold); '+(24-mat.length)+' are economically equivalent or not evaluable. '+Object.keys(cnt).map(k=>esc(k)+': '+cnt[k]).join(' | ')+'.<br>Strongest case for deferring: <b>'+best.r.id+'</b> ('+esc(CFG[best.r.ci].n+' / '+PRN[best.r.pk]+' / '+RCN[best.r.rk])+') '+fmtD(best.r.r.dR)+' = '+best.d.k.toFixed(2)+'x threshold &rarr; '+esc(best.d.t)+'. '+(worst.r.r.dR<0?'Strongest case for repairing now: <b>'+worst.r.id+'</b> ('+esc(CFG[worst.r.ci].n+' / '+PRN[worst.r.pk]+' / '+RCN[worst.r.rk])+') '+fmtD(-worst.r.r.dR)+' = '+worst.d.k.toFixed(2)+'x threshold &rarr; '+esc(worst.d.t)+'.':'No comparison favours repairing now on value.')+' Rows are ranked by |dNPV| / threshold, not by dollars, because each scenario has its own asset value.</div>';}
+ $('#mxTable').insertAdjacentHTML('beforeend','<tfoot><tr><td class="l" colspan="14">NPV Now / NPV Later are risk-adjusted. dNPV (det.) excludes expected failure cost. Positive dNPV favours deferral. Deferral of '+P.deferM+' mo vs permitted '+P.maxDefer+' mo'+(P.mandRepair?' (repair flagged mandatory)':'')+'.</td></tr></tfoot>');
+ // comparison
+ const ch=R.mx.concat(R.nd||[]).filter(r=>!ST.unsel[r.id]);
+ let c='<thead><tr><th class="l">ID</th><th class="l">Name</th><th class="l">Config / price / recovery</th><th>NPV Now (det.)</th><th>NPV Later (det.)</th><th>dNPV (det.)</th><th>Exp. failure cost of deferral (PV)</th><th>Risk-adj. dNPV</th><th>Deferred bbl (later)</th><th>Recovered bbl (later)</th><th>Unrecovered bbl (later)</th><th>Repair cost (later)</th></tr></thead><tbody>';
+ ch.forEach(r=>{c+='<tr><td class="l">'+r.id+'</td><td class="l">'+esc(ST.names[r.id]||'')+'</td><td class="l">'+esc(CFG[r.ci].n+' / '+PRN[r.pk]+' / '+RCN[r.rk])+'</td><td>'+fmtD(r.r.now.npv)+'</td><td>'+fmtD(r.r.later.npv)+'</td><td class="'+sgn(r.r.d)+'">'+fmtD(r.r.d)+'</td><td>'+fmtD(r.r.fcDef)+'</td><td class="'+sgn(r.r.dR)+'">'+fmtD(r.r.dR)+'</td><td>'+fmt0(r.r.later.deferred)+'</td><td>'+fmt0(r.r.later.recovered)+'</td><td>'+fmt0(r.r.later.unrec)+'</td><td>'+fmtD(r.r.later.repCost)+'</td></tr>';});
+ $('#cmpTable').innerHTML=c+'</tbody>';
+ // probability weighted
+ const pw=R.pw,ws=P.wDecl+P.wFlat+P.wInc;
+ let t='<p class="note">Expected values are probability-weighted sums of the individual scenario NPVs (not NPVs of averaged prices or volumes). Configuration probabilities: '+(P.jointMode==='joint'?'explicit joint table':'independent, P(refrac) = '+P.rfProb+'%, P(development) = '+P.dvProb+'%')+'. Recovery method: '+RCN[P.recSel]+'. Total weight = '+(pw.W*100).toFixed(2)+'%'+(Math.abs(pw.W-1)>1e-4?' <span class="tag r">probabilities do not sum to 100%</span>':'')+'.</p>';
+ t+='<div class="kpis">'+kpi('Deterministic dNPV (selected)',fmtD(R.sel.d),sgn(R.sel.d),selId(P))+kpi('Expected dNPV (det.)',fmtD(pw.E.d),sgn(pw.E.d),'NPV now '+fmtM(pw.E.now)+' / later '+fmtM(pw.E.later))+kpi('Expected risk-adj. dNPV',fmtD(pw.E.dR),sgn(pw.E.dR),decide(pw.E.dR,P,null,pw.E.nowR).t)+kpi('Best case',fmtD(pw.best.r.dR),sgn(pw.best.r.dR),pw.best.id+' '+CFG[pw.best.ci].n+' / '+PRN[pw.best.pk])+kpi('Worst case',fmtD(pw.worst.r.dR),sgn(pw.worst.r.dR),pw.worst.id+' '+CFG[pw.worst.ci].n+' / '+PRN[pw.worst.pk])+kpi('Range of risk-adj. dNPV',fmtM(pw.worst.r.dR)+' to '+fmtM(pw.best.r.dR),'','12 weighted combinations')+'</div>';
+ t+='<div class="tw" style="max-height:none"><table><thead><tr><th class="l">Scenario</th><th>Weight</th><th>Risk-adj. dNPV</th><th>Weighted contribution</th></tr></thead><tbody>'+pw.sub.map(r=>{const w=pw.wp[r.pk]*pw.wc[r.ci];return '<tr><td class="l">'+r.id+' '+esc(CFG[r.ci].n+' / '+PRN[r.pk])+'</td><td>'+(w*100).toFixed(2)+'%</td><td class="'+sgn(r.r.dR)+'">'+fmtD(r.r.dR)+'</td><td>'+fmtD(w*r.r.dR)+'</td></tr>';}).join('')+'</tbody></table></div>';
+ $('#pwBox').innerHTML=t;
+}
+function kpi(k,v,cls,s){return '<div class="kpi"><div class="k">'+esc(k)+'</div><div class="v '+(cls||'')+'">'+v+'</div><div class="s">'+esc(s||'')+'</div></div>';}
+function selAll(on){R.mx.concat(R.nd||[]).forEach(r=>{if(on)delete ST.unsel[r.id];else ST.unsel[r.id]=1;});renderMatrix();persist();}
+function exportMatrixCSV(){
+ const rows=[['Scenario ID','Name','Refrac','Development','Price path','Recovery','NPV Now det','NPV Later det','dNPV det','NPV Now risk-adj','NPV Later risk-adj','Expected failure cost of deferral PV','Risk-adj dNPV','Preferred timing','Status','Deferral months','Deferred bbl later','Recovered bbl later','Unrecovered bbl later']];
+ R.mx.concat(R.nd||[]).forEach(r=>rows.push([r.id,ST.names[r.id]||'',CFG[r.ci].rf?'ON':'OFF',CFG[r.ci].dv?'ON':'OFF',PRN[r.pk]+(r.nodecl?' (no decline)':''),RCN[r.rk],r.r.now.npv.toFixed(2),r.r.later.npv.toFixed(2),r.r.d.toFixed(2),r.r.now.npvR.toFixed(2),r.r.later.npvR.toFixed(2),r.r.fcDef.toFixed(2),r.r.dR.toFixed(2),decide(r.r.dR,r.q,ST.flags[r.id],r.r.now.npvR).t,ST.flags[r.id]||'ok',P.deferM,r.r.later.deferred.toFixed(2),r.r.later.recovered.toFixed(2),r.r.later.unrec.toFixed(2)]));
+ dl('scenario_matrix.csv',toCSV(rows));
+}
+function pickScenario(id){const r=R.mx.concat(R.nd||[]).find(x=>x.id===id);if(!r)return;$('#in_rfOn').checked=CFG[r.ci].rf;$('#in_dvOn').checked=CFG[r.ci].dv;$('#in_priceSel').value=r.pk;$('#in_recSel').value=r.rk;if(r.nodecl)$('#in_declModel').value='none';recalc();}
+
+/* ---------------- Cash flow tab ---------------- */
+const CFC=[['m','Month',0],['date','Date',-1],['price','Oil price $/bbl',2],['base','Base bbl',0],['rf','Refrac bbl',0],['dv','Development bbl',0],['baseline','Total baseline bbl',0],['aff','Shutdown-affected bbl',0],['rec','Recovery bbl',0],['act','Actual produced bbl',0],['rev','Gross revenue $',0],['roy','Royalty $',0],['tax','Production tax $',0],['opex','Operating cost $',0],['rep','Repair cost $',0],['rfc','Refrac cost $',0],['dvc','Development cost $',0],['ncf','Net cash flow (det.) $',0],['risk','Expected failure cost $',0],['ncfR','Net cash flow (risk-adj.) $',0],['df','Discount factor',4],['discR','Discounted CF $',0],['cumR','Cumulative NPV $',0]];
+function cfData(){const rk=$('#cfRec').value;const pr=R.selAlt[rk];return {rk,pr};}
+function cfmt(v,dp){return dp===-1?v:dp===4?(+v).toFixed(4):dp===2?fmt2(v):fmt0(v);}
+function renderCash(){
+ const {rk,pr}=cfData(),view=$('#cfView').value,n=pr.now,l=pr.later;let h='';
+ $('#cfSum').innerHTML='NPV now: <b>'+fmtD(n.npvR)+'</b> (det. '+fmtD(n.npv)+') | NPV later: <b>'+fmtD(l.npvR)+'</b> (det. '+fmtD(l.npv)+') | risk-adj. dNPV: <b class="'+sgn(pr.dR)+'">'+fmtD(pr.dR)+'</b>';
+ $('#cfTitle').textContent='Detailed monthly cash flow - '+{now:'Repair Now',later:'Repair Later ('+P.deferM+' mo)',side:'Side-by-side',inc:'Incremental (Later - Now)'}[view]+' - '+RCN[rk]+' recovery';
+ if(view==='now'||view==='later'||view==='inc'){
+  let M;if(view==='inc'){let cum=0;M=n.M.map((a,i)=>{const b=l.M[i],o={m:a.m,date:a.date};CFC.forEach(([k])=>{if(!['m','date','df','cumR'].includes(k))o[k]=b[k]-a[k];});o.price=a.price;o.df=a.df;cum+=o.discR;o.cumR=cum;return o;});}
+  else M=(view==='now'?n:l).M;
+  h='<thead><tr>'+CFC.map(c=>'<th>'+c[1]+'</th>').join('')+'</tr></thead><tbody>'+M.map(o=>'<tr>'+CFC.map(([k,,dp])=>'<td>'+cfmt(o[k],dp)+'</td>').join('')+'</tr>').join('')+'</tbody>';
+  const tot={};CFC.forEach(([k])=>tot[k]=M.reduce((s,o)=>s+(+o[k]||0),0));
+  h+='<tfoot><tr>'+CFC.map(([k,,dp],i)=>'<td>'+(i===0?'Total':['date','price','df','cumR'].includes(k)?'':cfmt(tot[k],dp))+'</td>').join('')+'</tr></tfoot>';
+ }else{
+  const cols=[['Month'],['Date'],['Price'],['Actual bbl Now'],['Actual bbl Later'],['Net CF det. Now'],['Net CF det. Later'],['Exp. failure Now'],['Exp. failure Later'],['Risk-adj CF Now'],['Risk-adj CF Later'],['Disc. CF Now'],['Disc. CF Later'],['Cum NPV Now'],['Cum NPV Later'],['Cum dNPV']];
+  h='<thead><tr>'+cols.map(c=>'<th>'+c[0]+'</th>').join('')+'</tr></thead><tbody>'+n.M.map((a,i)=>{const b=l.M[i];return '<tr><td>'+a.m+'</td><td>'+a.date+'</td><td>'+fmt2(a.price)+'</td><td>'+fmt0(a.act)+'</td><td>'+fmt0(b.act)+'</td><td>'+fmt0(a.ncf)+'</td><td>'+fmt0(b.ncf)+'</td><td>'+fmt0(a.risk)+'</td><td>'+fmt0(b.risk)+'</td><td>'+fmt0(a.ncfR)+'</td><td>'+fmt0(b.ncfR)+'</td><td>'+fmt0(a.discR)+'</td><td>'+fmt0(b.discR)+'</td><td>'+fmt0(a.cumR)+'</td><td>'+fmt0(b.cumR)+'</td><td class="'+sgn(b.cumR-a.cumR)+'">'+fmt0(b.cumR-a.cumR)+'</td></tr>';}).join('')+'</tbody>';
+ }
+ $('#cfTable').innerHTML=h;
+ const lab=n.M.map(o=>String(o.m));
+ if(view==='inc')barChart($('#cfC1'),{labels:lab,series:[{name:'Incremental risk-adj. CF',color:'#1f5fbf',y:l.M.map((b,i)=>b.ncfR-n.M[i].ncfR)}],yFmt:fmtS,xTitle:'Month'});
+ else barChart($('#cfC1'),{labels:lab,series:[{name:'Repair Now',color:'#c0392b',y:n.M.map(o=>o.ncfR)},{name:'Repair Later',color:'#1e8449',y:l.M.map(o=>o.ncfR)}],yFmt:fmtS,xTitle:'Month'});
+ const x=[0].concat(n.M.map(o=>o.m));
+ lineChart($('#cfC2'),{x,series:view==='inc'?[{name:'Cumulative dNPV',color:'#1f5fbf',y:[0].concat(l.M.map((b,i)=>b.cumR-n.M[i].cumR))}]:[{name:'Repair Now',color:'#c0392b',y:[0].concat(n.M.map(o=>o.cumR))},{name:'Repair Later',color:'#1e8449',y:[0].concat(l.M.map(o=>o.cumR))}],xFmt:v=>v.toFixed(0),xTitle:'Month',yFmt:fmtS,yHover:fmtD,zero:true});
+}
+function exportCashCSV(){
+ const rows=[['Recovery','Alternative'].concat(CFC.map(c=>c[1]))];
+ ['elev','grad'].forEach(rk=>{const pr=R.selAlt[rk];[['Now',pr.now],['Later',pr.later]].forEach(([nm,s])=>s.M.forEach(o=>rows.push([RCN[rk],nm].concat(CFC.map(([k,,dp])=>dp===-1?o[k]:(+o[k]).toFixed(dp===4?6:4)))))); });
+ dl('monthly_cash_flow.csv',toCSV(rows));
+}
+
+/* ---------------- Dashboard tab ---------------- */
+function renderDash(){
+ const s=R.sel,d=R.dec,band=matThr(P,s.now.npvR);
+ const priceSigns=['decl','flat','inc'].map(pk=>R.mx.find(r=>r.ci+'|'+r.pk+'|'+r.rk===selKey(clone(P,{priceSel:pk}))).r.dR);
+ const flips=priceSigns.some(v=>v>band)&&priceSigns.some(v=>v<-band);
+ const drv=R.wf.steps.slice().sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).slice(0,3);
+ const inadm=P.deferM>P.maxDefer||P.mandRepair||ST.flags[selId(P)]==='prohib';
+ const cls=R.sig.cls;
+ let t='<div class="rec '+cls+'"><h2>'+esc(R.sig.head)+'</h2><p>Under the selected assumptions ('+esc(selName(P))+'), deferring the repair by '+P.deferM+' months results in a risk-adjusted incremental NPV of <b class="'+sgn(s.dR)+'">'+fmtD(s.dR)+'</b> relative to immediate repair (deterministic: '+fmtD(s.d)+'; expected failure cost of deferral: '+fmtD(s.fcDef)+' PV). ';
+ t+='The top three drivers are '+drv.map(x=>'<b>'+esc(x[0].toLowerCase())+'</b> ('+fmtM(x[1])+')').join(', ')+'.</p>';
+ t+='<p><b>Scale:</b> '+fmtD(s.dR)+' is '+(R.sig.sc.k).toFixed(2)+'x the '+fmtM(band)+' materiality threshold, '+R.sig.sc.pct.toFixed(2)+'% of asset NPV and '+R.sig.sc.days.toFixed(1)+' days of current net production. '+(R.sig.tier===0?'Neither option dominates; the choice can be made on integrity and operational grounds.':R.sig.tier>=1?(R.sig.robust?'The preference is material and robust.':'The preference is material at base assumptions but not robust; see the significance panel.'):'')+'</p>';
+ if(flips)t+='<p class="amb"><b>Uncertainty:</b> the preferred timing changes across the declining / flat / increasing price paths for this configuration (risk-adj. dNPV '+priceSigns.map(fmtM).join(' / ')+'). See the decision-boundary tab for the break-even price.</p>';
+ if(inadm)t+='<p class="neg"><b>Integrity / regulatory constraint:</b> the proposed '+P.deferM+'-month deferral is not permitted ('+(P.mandRepair?'repair flagged mandatory':ST.flags[selId(P)]==='prohib'?'scenario marked integrity-prohibited':'limit '+P.maxDefer+' months')+'). Economic results are shown as hypothetical only and are not a recommendation to defer.</p>';
+ else t+='<p class="note">An economic preference for deferral is not authorization to defer a mandatory repair. Confirm integrity acceptability (e.g., remaining strength, re-assessment interval, regulatory repair criteria) separately.</p>';
+ $('#recBox').innerHTML=t+'</div>';
+ renderSig();renderStakes();
+ $('#kpis').innerHTML=kpi('NPV - Repair Now',fmtD(s.now.npvR),'','Deterministic '+fmtD(s.now.npv))+kpi('NPV - Repair Later',fmtD(s.later.npvR),'','Deterministic '+fmtD(s.later.npv)+(s.later.inH?'':' (repair beyond horizon)'))
+  +kpi('Incremental NPV (det.)',fmtD(s.d),sgn(s.d),'Later - Now, no failure risk')+kpi('Risk-adjusted incremental NPV',fmtD(s.dR),sgn(s.dR),'Later - Now, incl. expected failure cost')
+  +kpi('Expected failure cost of deferral',fmtD(s.fcDef),s.fcDef>0?'neg':'','PV, Later minus Now')+kpi('Shutdown-affected barrels',fmt0(s.later.deferred),'','Later; Now: '+fmt0(s.now.deferred))
+  +kpi('Recovered barrels',fmt0(s.later.recovered),'','Later; Now: '+fmt0(s.now.recovered))+kpi('Permanently unrecovered barrels',fmt0(s.later.unrec),'','Later; Now: '+fmt0(s.now.unrec)+(s.later.outstanding>0.5?' (incl. '+fmt0(s.later.outstanding)+' outstanding at horizon)':''))
+  +kpi('Preferred repair timing',d.t,d.c==='g'?'pos':d.c==='r'?'neg':'amb',inadm?'Deferral inadmissible':'Risk-adjusted basis; det. basis: '+R.decDet.t);
+ // chart 1 daily production
+ const D=R.sel.now.dy.baseline.length,xd=Array.from({length:D},(_,i)=>i/DPM),E=R.selAlt.elev,Gd=R.selAlt.grad;
+ lineChart($('#dC1'),{x:xd,series:[{name:'No-shutdown reference',color:'#7f8899',dash:[5,4],y:Array.from(E.now.dy.baseline),w:1.4},{name:'Now - elevated',color:'#c0392b',y:Array.from(E.now.dy.act)},{name:'Now - gradual',color:'#e59866',y:Array.from(Gd.now.dy.act),dash:[3,2]},{name:'Later - elevated',color:'#1e8449',y:Array.from(E.later.dy.act)},{name:'Later - gradual',color:'#7dcea0',y:Array.from(Gd.later.dy.act),dash:[3,2]}],xFmt:v=>v.toFixed(0),xHover:v=>'Month '+v.toFixed(2),xTitle:'Month',yTitle:'bbl/d',floor0:true,yHover:v=>fmt0(v)+' bbl/d'});
+ // chart 2 prices
+ const xm=Array.from({length:P.months+1},(_,i)=>i),pth=k=>{const a=priceCurve(clone(P,{priceSel:k}));return xm.map(m=>a[Math.min(a.length-1,Math.round(m*DPM))]);};
+ const ps=[{name:'Declining',color:'#c0392b',y:pth('decl')},{name:'Flat',color:'#5a6475',y:pth('flat')},{name:'Increasing',color:'#1e8449',y:pth('inc')}];if(P.priceSel==='custom')ps.push({name:'User-defined',color:'#1f5fbf',y:pth('custom')});
+ ps.forEach(x=>{if(x.name===PRN[P.priceSel])x.w=3;});
+ lineChart($('#dC2'),{x:xm,series:ps,xFmt:v=>v.toFixed(0),xTitle:'Month (selected path bold)',yTitle:'$/bbl benchmark',yHover:v=>'$'+fmt2(v)});
+ const lab=s.now.M.map(o=>String(o.m));
+ barChart($('#dC3'),{labels:lab,series:[{name:'Repair Now',color:'#c0392b',y:s.now.M.map(o=>o.ncfR)},{name:'Repair Later',color:'#1e8449',y:s.later.M.map(o=>o.ncfR)}],yFmt:fmtS,xTitle:'Month'});
+ lineChart($('#dC4'),{x:[0].concat(s.now.M.map(o=>o.m)),series:[{name:'Repair Now',color:'#c0392b',y:[0].concat(s.now.M.map(o=>o.cumR))},{name:'Repair Later',color:'#1e8449',y:[0].concat(s.later.M.map(o=>o.cumR))}],xFmt:v=>v.toFixed(0),xTitle:'Month',yFmt:fmtS,yHover:fmtD,zero:true});
+ waterfall($('#dC5'),R.wf.steps,'Risk-adj. dNPV');
+ $('#wfNote').textContent='Sequential attribution: starting from a neutral case (no decline, constant price, 1-day recovery, no escalation, no refrac/development, no risk), each factor is switched on in the order shown and its marginal change in dNPV is recorded. Bars reconcile to the total within $'+R.wf.recon.toExponential(1)+'. Attribution depends on order; totals do not.';
+ const rk=R.mx.concat(R.nd||[]).filter(r=>!ST.unsel[r.id]).sort((a,b)=>b.r.dR-a.r.dR);
+ hbars($('#dC6'),{base:0,rows:rk.map(r=>({label:r.id+' '+(ST.names[r.id]||(CFG[r.ci].n+' / '+PRN[r.pk]+' / '+RCN[r.rk])),a:r.r.dR,b:r.r.dR,ca:r.r.dR>=0?'#1e8449':'#c0392b',cb:r.r.dR>=0?'#1e8449':'#c0392b',tip:'<b>'+r.id+'</b> '+esc(CFG[r.ci].n+' / '+PRN[r.pk]+' / '+RCN[r.rk])+'<br>Risk-adj. dNPV: '+fmtD(r.r.dR)+'<br>'+decide(r.r.dR,r.q,ST.flags[r.id],r.r.now.npvR).t}))});
+ $('#limBox').innerHTML='<h3>Feasibility checks and key limitations</h3><ul class="note">'+
+  '<li><b>Economic feasibility:</b> '+esc(d.t)+' on a risk-adjusted basis ('+fmtD(s.dR)+').</li>'+
+  '<li><b>Technical feasibility:</b> recovery requires '+fmt0(s.later.recoverable/Math.max(1,P.recSel==='grad'?P.gradDays:P.elevDays))+' bbl/d incremental capacity for the deferred case'+(P.maxCap>0?' (capacity cap '+fmt0(P.maxCap)+' bbl/d'+(s.later.outstanding>0.5||s.now.outstanding>0.5?', <span class="neg">cap prevents full recovery within the horizon</span>':', recovery completes')+')':' (no capacity cap set)')+'. Status of this scenario: '+(ST.flags[selId(P)]==='tech'?'<span class="neg">marked technically infeasible</span>':'not flagged')+'.</li>'+
+  '<li><b>Integrity acceptability:</b> deferral '+P.deferM+' mo vs permitted '+P.maxDefer+' mo'+(P.mandRepair?'; repair flagged mandatory':'')+' &rarr; '+(inadm?'<span class="neg">inadmissible</span>':'within the user limit (engineering confirmation still required)')+'.</li>'+
+  '<li>Failure risk uses an expected-loss approximation (frequency x consequence); it does not model the change in subsequent production paths after a failure. Low-probability / high-consequence outcomes are averaged, which understates their decision weight for risk-averse operators.</li>'+
+  '<li>Price paths, decline parameters and recovery fractions are deterministic per scenario; use the probability weighting and decision-boundary tab to examine uncertainty.</li></ul>';
+}
+function renderSig(){
+ const G=R.sig,c=G.sc,p=P,d=R.dec,tierTxt=G.tier<0?'n/a':G.tier===0?'Equivalent (< 1x)':G.tier===1?'Moderate (1x - '+p.domMult+'x)':'Dominant (>= '+p.domMult+'x)';
+ const pc=v=>(v*100).toFixed(0)+'%';
+ let h='<h3>Is the difference significant? Materiality, robustness and dominance test</h3><table class="kv"><tbody>'+
+ '<tr><td>Risk-adjusted dNPV (Later - Now)</td><td><b class="'+sgn(c.dR)+'">'+fmtD(c.dR)+'</b></td></tr>'+
+ '<tr><td>Materiality threshold</td><td>'+fmtD(c.M)+' = max('+fmtM(p.matAbs)+' floor, '+p.matPct+'% x asset NPV '+fmtM(R.sel.now.npvR)+')</td></tr>'+
+ '<tr><td>Significance ratio |dNPV| / threshold</td><td><b>'+c.k.toFixed(2)+'x</b> &rarr; '+prefTag({c:G.tier===0?'a':G.tier<0?'x':c.dR>0?'g':'r',t:tierTxt})+'</td></tr>'+
+ '<tr><td>Share of asset NPV</td><td>'+c.pct.toFixed(2)+'% (threshold '+c.thrPct.toFixed(2)+'%)</td></tr>'+
+ '<tr><td>Days of current net production</td><td>'+c.days.toFixed(1)+' days at '+fmtM(c.dayVal)+'/day (threshold '+c.thrDays.toFixed(1)+' days)</td></tr>'+
+ '<tr><td>Barrels at today\'s netback</td><td>'+fmt0(c.bbl)+' bbl</td></tr>'+
+ '<tr><td>Multiple of repair cost</td><td>'+c.xRep.toFixed(2)+'x</td></tr>'+
+ '<tr><td>Scenario agreement (probability-weighted, 12 price x configuration cases)</td><td>'+(G.tier>=1?'Same material direction '+pc(G.wa)+', equivalent '+pc(G.we)+', opposite '+pc(G.wo):'Also equivalent '+pc(G.we)+', material defer/now elsewhere '+pc(G.wa+G.wo))+' (robust if &ge; '+p.robPct+'%)</td></tr>'+
+ '<tr><td>Single-parameter swings (tornado, 11 inputs)</td><td>dNPV range '+fmtM(G.tlo)+' to '+fmtM(G.thi)+'. '+(G.rev.length?'<span class="amb">Verdict changes with: '+esc(G.rev.map(r=>r.label).join(', '))+'</span>':'No single swing changes the verdict.')+'</td></tr>'+
+ '<tr><td>Dominant economic factor</td><td>'+esc(G.top[0])+' ('+fmtM(G.top[1])+', '+pc(G.share)+' of gross effect'+(G.share>=0.5?', dominant':', no single factor dominates')+'). Next: '+esc(G.ord[1][0])+' ('+fmtM(G.ord[1][1])+').</td></tr>'+
+ '</tbody></table>';
+ let v;
+ if(G.tier<0)v=esc(d.t)+'.';
+ else if(G.tier===0)v='<b>Not significant.</b> The '+fmtD(Math.abs(c.dR))+' difference is '+c.k.toFixed(2)+'x the threshold &mdash; '+Math.abs(c.days).toFixed(1)+' days of production on an asset worth '+fmtM(R.sel.now.npvR)+'. That is within normal forecast error, so the two options are interchangeable on economics. '+(d.adm?'Deferral is acceptable if integrity permits; schedule the repair for operational convenience.':'Deferral is not permitted, so repair now.')+(G.rev.length?' <span class="amb">Watch: it becomes a material preference if '+esc(G.rev.map(r=>r.label.toLowerCase()).join(', '))+' moves to the edge of its tested range &mdash; verify that input.</span>':'');
+ else if(G.robust)v='<b>Significant and robust.</b> '+(c.dR>0?'Deferring':'Repairing now')+' is worth '+fmtD(Math.abs(c.dR))+' more ('+c.k.toFixed(1)+'x the threshold, '+Math.abs(c.days).toFixed(1)+' production days). '+pc(G.wa)+' of scenario probability agrees and no single input swing reverses it. Main driver: '+esc(G.top[0].toLowerCase())+'.'+(c.dR>0&&!d.adm?' Deferral is not permitted, so the economic advantage cannot be taken.':'');
+ else v='<b>Significant at base assumptions, but conditional.</b> '+(c.dR>0?'Deferring':'Repairing now')+' leads by '+fmtD(Math.abs(c.dR))+' ('+c.k.toFixed(1)+'x threshold) but '+(G.wa<p.robPct/100?'only '+pc(G.wa)+' of scenario probability agrees':'')+(G.wa<p.robPct/100&&G.rev.length?' and ':'')+(G.rev.length?'it reverses within the tested range of '+esc(G.rev.map(r=>r.label.toLowerCase()).join(', ')):'')+'. Firm up those inputs before treating this as a decision point.';
+ h+='<div class="verdict '+G.cls+'">'+v+'</div>';
+ h+='<details class="small" style="margin-top:8px"><summary><b>Interpretation guideline</b></summary><table class="kv" style="margin-top:4px"><tbody>'+
+ '<tr><td>Why scale matters</td><td>$1,000 is large for a $10 decision and noise for a $25M asset. dNPV is therefore judged against a threshold sized to the asset: the larger of a fixed floor and a share of the asset NPV. It is also shown as days of production so anyone can read it.</td></tr>'+
+ '<tr><td>&lt; 1x threshold: Equivalent</td><td>Difference is inside forecast noise. Either option is acceptable; deferral can be lived with if integrity allows. Decide on operations, integrity and risk appetite.</td></tr>'+
+ '<tr><td>1x - '+p.domMult+'x: Moderate</td><td>A real preference, but check robustness before acting.</td></tr>'+
+ '<tr><td>&ge; '+p.domMult+'x: Dominant</td><td>One option clearly wins on value.</td></tr>'+
+ '<tr><td>Robust</td><td>At least '+p.robPct+'% of scenario probability points the same way and no single tornado input swing reverses the verdict. Material but not robust = conditional.</td></tr>'+
+ '<tr><td>Dominant factor</td><td>The waterfall driver carrying &ge; 50% of the gross (absolute) effect. It tells you which assumption the decision really hinges on.</td></tr>'+
+ '</tbody></table><p class="note">Thresholds are editable in Inputs, group I.</p></details>';
+ $('#sigBox').innerHTML=h;
+}
+function renderStakes(){
+ const s=R.sel,p=P,G=R.sig,d=R.dec,dv=s.now.dayVal0||1,cumL=s.later.cumPoFWin,cumN=s.now.cumPoFWin,inc=Math.max(0,cumL-cumN),loss=s.later.lossMid,gain=s.d,val=s.dR;
+ const tail=cumL*100>=p.tailPoF,odds=inc>0?Math.round(1/inc):0,ratio=loss/Math.max(1,Math.abs(gain));
+ const be=R.bePof.roots.map(r=>r.x.toFixed(2)+'%/yr').join(', ');
+ let h='<h3>What is at stake if you do not shut in now (defer '+p.deferM+' months)</h3><table class="kv"><tbody>'+
+ '<tr><td>Value of waiting before failure risk</td><td><b class="'+sgn(gain)+'">'+fmtD(gain)+'</b> ('+(gain/dv).toFixed(1)+' days of production): discounting, price path, decline and cost escalation</td></tr>'+
+ '<tr><td>Production at stake</td><td>Shut in now: '+fmt0(s.now.deferred)+' bbl deferred, '+fmt0(s.now.unrec)+' never recovered. Shut in later: '+fmt0(s.later.deferred)+' deferred, '+fmt0(s.later.unrec)+' never recovered ('+(s.now.unrec-s.later.unrec>=0?'deferring saves ':'deferring loses ')+fmt0(Math.abs(s.now.unrec-s.later.unrec))+' bbl).</td></tr>'+
+ '<tr><td>Chance of a failure before the deferred repair</td><td><b>'+(cumL*100).toFixed(2)+'%</b>'+' vs '+(cumN*100).toFixed(2)+'% if repaired now'+(odds?' (extra '+(inc*100).toFixed(2)+'%, about 1 in '+odds+')':'')+(tail?' <span class="tag r">above '+p.tailPoF+'% tail flag</span>':' <span class="tag g">below '+p.tailPoF+'% tail flag</span>')+'</td></tr>'+
+ '<tr><td>Cost if one failure does occur</td><td><b>'+fmtD(loss)+'</b> = consequence '+fmtM(p.consq)+' + emergency repair '+fmtM(p.emerg)+' + cleanup '+fmtM(p.cleanup)+' + '+p.fDays+'-day outage '+fmtM(s.later.lossProd)+'. That is '+(loss/dv).toFixed(0)+' days of production and '+ratio.toFixed(0)+'x the value of waiting.</td></tr>'+
+ '<tr><td>Expected failure cost of deferring (PV)</td><td>'+fmtD(s.fcDef)+'</td></tr>'+
+ '<tr><td>Net value of deferring (risk-adjusted)</td><td><b class="'+sgn(val)+'">'+fmtD(val)+'</b> ('+(val/dv).toFixed(1)+' days of production)</td></tr>'+
+ '<tr><td>Break-even annual PoF before repair</td><td>'+(be||'none in 0-50%/yr')+' vs '+p.pof0+'%/yr assumed'+(p.riskMode==='inc'?' (escalating '+p.riskEsc+'%/yr)':'')+'</td></tr>'+
+ '</tbody></table>';
+ let v,cl='a';
+ if(G.tier<0)v=esc(d.t)+'.';
+ else if(G.tier===0){v='<b>Is shutting in now worthwhile?</b> Economically it hardly matters: shutting in now '+(val>=0?'gives up ':'adds ')+fmtD(Math.abs(val))+' ('+Math.abs(val/dv).toFixed(1)+' days of production, '+Math.abs(G.sc.pct).toFixed(2)+'% of asset value). ';
+  v+=tail?'What it buys is removal of a '+(cumL*100).toFixed(1)+'% chance of a '+fmtM(loss)+' event &mdash; '+ratio.toFixed(0)+'x the economic difference. Repairing now is inexpensive insurance; deferring is economically acceptable only if the business can tolerate that single-event exposure and integrity permits.':'The failure exposure while waiting is below the '+p.tailPoF+'% tail flag. Either timing is acceptable; deferral can be lived with.';}
+ else if(val>0&&d.adm){cl=G.robust?'g':'a';v='<b>Is shutting in now worthwhile?</b> No, not on value: shutting in now gives up '+fmtD(val)+' ('+(val/dv).toFixed(1)+' days of production, '+G.sc.k.toFixed(1)+'x the threshold). This already deducts the expected cost of the '+(cumL*100).toFixed(1)+'% failure chance.'+(tail?' <span class="neg">Tail flag: if a single '+fmtM(loss)+' event is unacceptable regardless of averages, override in favour of repairing now.</span>':'')+(G.robust?'':' <span class="amb">Conditional: the margin is not robust to the assumptions listed in the significance panel.</span>');}
+ else if(val>0){cl='r';v='<b>Is shutting in now worthwhile?</b> Deferral would gain '+fmtD(val)+' but is not permitted by the integrity/regulatory limits. Shut in and repair now.';}
+ else{cl='r';v='<b>Is shutting in now worthwhile?</b> Yes: deferring would destroy '+fmtD(-val)+' ('+(-val/dv).toFixed(1)+' days of production, '+G.sc.k.toFixed(1)+'x the threshold), mainly through '+esc(G.top[0].toLowerCase())+'.'+(G.robust?'':' <span class="amb">Conditional: the margin is not robust to the assumptions listed in the significance panel.</span>');if(!G.robust)cl='a';}
+ $('#stakeBox').innerHTML=h+'<div class="verdict '+cl+'">'+v+'</div><p class="note small">Single-event cost uses rates and netback at the middle of the deferral window. Days of production = value / (current baseline rate x current netback).</p>';
+}
+function printDash(){setTab('dash');setTimeout(()=>window.print(),300);}
+
+/* ---------------- Sensitivity tab ---------------- */
+function syncSensFromInputs(){$('#sPrice').value=P.priceSel;$('#sRec').value=P.recSel;$('#sRf').checked=P.rfOn;$('#sDv').checked=P.dvOn;$('#sCons').value=P.consq;$('#sDisc').value=P.disc;if(SENS)SENS.synced=selKey(P);runSens();}
+function sensParams(){const q=clone(P);q.priceSel=$('#sPrice').value;q.recSel=$('#sRec').value;q.rfOn=$('#sRf').checked;q.dvOn=$('#sDv').checked;const c=parseFloat($('#sCons').value),d=parseFloat($('#sDisc').value);if(isFinite(c)&&c>=0)q.consq=c;if(isFinite(d)&&d>=0&&d<=50)q.disc=d;return q;}
+function runSens(){
+ if(!P)return;if(!SENS||SENS.synced!==selKey(P)){$('#sPrice').value=P.priceSel;$('#sRec').value=P.recSel;$('#sRf').checked=P.rfOn;$('#sDv').checked=P.dvOn;$('#sCons').value=P.consq;$('#sDisc').value=P.disc;}
+ const tok=++sensTok,q=sensParams(),nx=+$('#sRes').value,ny=Math.round(nx*0.8)+(Math.round(nx*0.8)%2?0:1);
+ const S={q,synced:selKey(P),stale:false};const jobs=[
+  ['optimization',()=>S.opt=optimizeTiming(q)],
+  ['break-even values',()=>S.be=[['price',20,200],['decl',0,15],['pof',0,50],['cost',0,5e6],['rec',0,100],['defer',0.25,24]].map(([k,a,b])=>Object.assign({k},breakEven(q,k,a,b)))],
+  ['heatmap B',()=>S.B=gridCompute(q,'price','decl',nx,ny)],
+  ['heatmap C',()=>S.C=gridCompute(q,'price','pof',nx,ny)],
+  ['heatmap D',()=>S.D=gridCompute(q,'decl','pof',nx,ny)],
+  ['configuration boundaries',()=>S.F=CFG.map(cf=>gridCompute(clone(q,{rfOn:cf.rf,dvOn:cf.dv}),'price','decl',nx,ny))],
+  ['custom heatmap',()=>{const xv=$('#cX').value,yv=$('#cY').value;S.X=gridCompute(q,xv,yv,nx,ny,[+$('#cXlo').value,+$('#cXhi').value],[+$('#cYlo').value,+$('#cYhi').value]);}],
+  ['tornado',()=>S.T=tornado(q)]];
+ let i=0;const step=()=>{if(tok!==sensTok)return;if(i>=jobs.length){$('#prog').textContent='';SENS=S;renderSens();return;}$('#prog').textContent='Calculating '+jobs[i][0]+' ('+(i+1)+'/'+jobs.length+')...';setTimeout(()=>{if(tok!==sensTok)return;jobs[i][1]();i++;step();},15);};step();
+}
+function hmInfo(G,q){return (i,j)=>{const c=G.cells[j][i],X=VARS[G.xv],Y=VARS[G.yv],d=decide(c.dR,c.q,null,c.now);return '<b>'+esc(X.l)+':</b> '+X.f(G.xs[i])+'<br><b>'+esc(Y.l)+':</b> '+Y.f(G.ys[j])+'<br>NPV now: '+fmtD(c.now)+'<br>NPV later: '+fmtD(c.later)+'<br>Risk-adj. dNPV: <b>'+fmtD(c.dR)+'</b> (det. '+fmtD(c.d)+')<br>Expected failure cost of deferral: '+fmtD(c.fc)+'<br>Preferred: '+esc(d.t);};}
+function zeroNote(G){if(!hasZero(G.z)){const allPos=G.z.every(r=>r.every(v=>v>0));return '<span class="amb">No break-even boundary occurs in the tested range; '+(allPos?'deferral':'immediate repair')+' is preferred everywhere on this grid.</span>';}return 'Black line: risk-adjusted dNPV = 0 contour, interpolated from the computed grid (marching squares). Green: deferral has higher NPV; red: immediate repair; amber: |dNPV| below the '+fmtM(matThr(P,R.sel.now.npvR))+' materiality threshold (options economically equivalent).';}
+function renderSens(){
+ const S=SENS;if(!S)return;const q=S.q;
+ // optimization
+ const o=S.opt;const x=o.out.map(r=>r.m);
+ lineChart($('#sOpt'),{x,series:[{name:'Risk-adjusted NPV',color:'#1f5fbf',y:o.out.map(r=>r.npvR),dots:true},{name:'Deterministic NPV',color:'#7f8899',dash:[4,3],y:o.out.map(r=>r.npv)},{name:'Inadmissible (hypothetical)',color:'#c0392b',y:o.out.map(r=>r.adm&&r.inH?NaN:r.npvR),dots:true,w:0.1}],points:o.best?[{x:o.best.m,y:o.best.npvR,color:'#1e8449',label:'Optimum '+o.best.m+' mo'}]:[],shade:q.maxDefer<24?[{x0:q.mandRepair?0:q.maxDefer,x1:24,color:'rgba(192,57,43,.08)'}]:[],xFmt:v=>v.toFixed(0),xHover:v=>'Repair at month '+v,xTitle:'Repair deferral (months)',yFmt:fmtS,yHover:fmtD});
+ $('#optTxt').innerHTML=o.best?'Optimal permissible repair month: <b>'+o.best.m+'</b> (risk-adj. NPV '+fmtD(o.best.npvR)+', '+fmtD(o.best.npvR-o.out[0].npvR)+' vs repair now). '+(o.all.m!==o.best.m?'Unconstrained optimum '+o.all.m+' mo is outside the permitted window and is shown as hypothetical only. ':'')+'Search limited to deferrals within the permitted '+(q.mandRepair?'0 (mandatory repair)':q.maxDefer)+' months and inside the forecast horizon. This is an economic optimum, not authorization to defer.':'No admissible repair month.';
+ // break-evens
+ let h='<table><thead><tr><th class="l">Parameter</th><th>Range tested</th><th class="l">Break-even value(s)</th><th class="l">Direction</th><th>|dNPV| at root</th></tr></thead><tbody>';
+ S.be.forEach(b=>{const V=VARS[b.k];const rs=b.roots;h+='<tr><td class="l">'+esc(V.l)+'</td><td>'+V.f(b.lo)+' - '+V.f(b.hi)+'</td><td class="l">'+(rs.length?rs.map(r=>'<b>'+V.f(r.x)+'</b>').join(', '):'<span class="amb">None in range ('+(b.ys[0]>0?'deferral':'repair now')+' preferred throughout)</span>')+'</td><td class="l">'+rs.map(r=>r.up?'Defer favoured above':'Defer favoured below').join('; ')+'</td><td>'+rs.map(r=>'<span class="'+(r.ok?'pass':'fail')+'">'+fmtD(Math.abs(r.f))+'</span>').join(', ')+'</td></tr>';});
+ $('#beBox').innerHTML='<div class="tw be" style="max-height:none">'+h+'</tbody></table></div><p class="note">Each parameter is scanned at 49 points across the range; every sign change of risk-adjusted dNPV is refined by bisection (60 iterations max) and verified by re-running the engine at the root. Multiple roots are all reported; nothing is extrapolated outside the range. Deferral roots are resolved to whole days because the repair date is a daily event.</p>';
+ const band=matThr(P,R.sel.now.npvR);
+ heatmap($('#hB'),S.B,{band,info:hmInfo(S.B,q)});$('#hBn').innerHTML=zeroNote(S.B);
+ heatmap($('#hC'),S.C,{band,info:hmInfo(S.C,q)});$('#hCn').innerHTML=zeroNote(S.C)+' Above the line, the expected cost of failure outweighs any gain from waiting.';
+ heatmap($('#hD'),S.D,{band,info:hmInfo(S.D,q)});$('#hDn').innerHTML=zeroNote(S.D);
+ const cc=['#111','#1f5fbf','#b7791f','#8e44ad'];const sk=CFG.findIndex(c=>c.rf===q.rfOn&&c.dv===q.dvOn);
+ heatmap($('#hF'),S.F[sk],{band,info:hmInfo(S.F[sk],q),contours:S.F.map((G,i)=>({z:G.z,color:cc[i],w:i===sk?3:2,dash:i===sk?[]:[6,3],label:CFG[i].n+(hasZero(G.z)?'':' (no boundary)')}))});
+ $('#hFn').innerHTML='Shading shows the configuration selected above ('+esc(CFG[sk].n)+'). Lines are the dNPV = 0 contours of all four configurations. If development or refrac raises throughput before the deferred repair date, the deferred shutdown defers more barrels, which shifts the boundary toward immediate repair.';
+ heatmap($('#hX'),S.X,{band,info:hmInfo(S.X,q)});$('#hXn').innerHTML=zeroNote(S.X);
+ // tornado
+ const T=S.T;hbars($('#sTor'),{base:T.base,legend:[{name:'Low value',color:'#c0392b',box:true},{name:'High value',color:'#1e8449',box:true}],rows:T.rows.map(r=>{const fv=(TOR_AP[r.k]?v=>fmtS(v):VARS[r.k].f);return {label:r.label,a:r.va,b:r.vb,tip:'<b>'+esc(r.label)+'</b><br>Low '+fv(r.lo)+': '+fmtD(r.va)+'<br>High '+fv(r.hi)+': '+fmtD(r.vb)+'<br>Swing: '+fmtD(r.sw)+'<br>Base risk-adj. dNPV: '+fmtD(T.base)};})});
+ $('#torTable').innerHTML='<thead><tr><th class="l">Parameter</th><th>Low</th><th>High</th><th>dNPV at low</th><th>dNPV at high</th><th>Swing</th></tr></thead><tbody>'+ST.tor.map((t,i)=>{const r=T.rows.find(x=>x.k===t[0]);return '<tr><td class="l">'+esc(t[1])+'</td><td><input type="number" data-tor="'+i+'|2" value="'+t[2]+'" style="width:100px"></td><td><input type="number" data-tor="'+i+'|3" value="'+t[3]+'" style="width:100px"></td><td>'+fmtD(r.va)+'</td><td>'+fmtD(r.vb)+'</td><td>'+fmtD(r.sw)+'</td></tr>';}).join('')+'</tbody>';
+}
+function exportGridCSV(){
+ if(!SENS)return;const rows=[['Grid','X variable','X','Y variable','Y','NPV Now risk-adj','NPV Later risk-adj','dNPV det','Risk-adj dNPV','Expected failure cost of deferral','Preferred']];
+ const add=(nm,G)=>G.cells.forEach((r,j)=>r.forEach((c,i)=>rows.push([nm,VARS[G.xv].l,G.xs[i],VARS[G.yv].l,G.ys[j],c.now.toFixed(2),c.later.toFixed(2),c.d.toFixed(2),c.dR.toFixed(2),c.fc.toFixed(2),decide(c.dR,c.q,null,c.now).t])));
+ add('B',SENS.B);add('C',SENS.C);add('D',SENS.D);SENS.F.forEach((G,i)=>add('F-'+CFG[i].n,G));add('Custom',SENS.X);
+ dl('decision_boundary_grids.csv',toCSV(rows));
+}
+
+/* =====================================================================
+   9. AUTOMATED VALIDATION
+   ===================================================================== */
+function runValidation(render){
+ const p=P,T=[],add=(n,ok,det)=>T.push({n,ok:!!ok,det});const tol=(a,b,r)=>Math.abs(a-b)<=(r||1e-6)*Math.max(1,Math.abs(a),Math.abs(b));
+ try{
+ {const r=pair(clone(p,{shutDays:0,laterShutDays:0}));add('No shutdown produces no shutdown-related production loss',r.now.deferred===0&&r.later.deferred===0&&r.now.unrec===0&&r.later.unrec===0,'Deferred bbl now/later = '+r.now.deferred+' / '+r.later.deferred);}
+ {const r=pair(clone(p,{recPct:0}));add('Zero recovery percentage produces zero recovered barrels',r.now.recovered===0&&r.later.recovered===0,'Recovered now/later = '+r.now.recovered+' / '+r.later.recovered+'; unrecovered = deferred: '+fmt0(r.later.unrec)+' = '+fmt0(r.later.deferred));}
+ {const q=clone(p,{recPct:100,maxCap:0,deferM:Math.min(p.deferM,Math.max(0,p.months-8))});const r=pair(q);add('100% recovery leaves no permanently lost barrels when recovery completes',r.now.outstanding<1e-6&&tol(r.now.recovered,r.now.deferred,1e-9)&&tol(r.later.recovered,r.later.deferred,1e-9),'Now: deferred '+fmt2(r.now.deferred)+', recovered '+fmt2(r.now.recovered)+'; Later: deferred '+fmt2(r.later.deferred)+', recovered '+fmt2(r.later.recovered));}
+ {let worst=-Infinity;R.mx.forEach(m=>[m.r.now,m.r.later].forEach(s=>{worst=Math.max(worst,s.recovered-s.recoverable);}));const rc=pair(clone(p,{maxCap:p.Q0*1.02}));[rc.now,rc.later].forEach(s=>{worst=Math.max(worst,s.recovered-s.recoverable);});add('Recovery never exceeds the recoverable volume',worst<=1e-6,'Max (recovered - recoverable) over 48 cases + capped case = '+worst.toExponential(2)+' bbl');}
+ {const q=clone(p,{rfOn:false}),r=pair(q,true);const ok=r.now.rfProd===0&&r.later.rfProd===0&&r.now.rfCost===0&&r.later.rfCost===0&&r.later.M.every(o=>o.rf===0&&o.rfc===0);add('Refrac OFF produces no refrac production or cost',ok,'Refrac bbl '+r.later.rfProd+', cost '+r.later.rfCost);}
+ {const q=clone(p,{dvOn:false}),r=pair(q,true);const ok=r.now.dvProd===0&&r.later.dvProd===0&&r.now.dvCost===0&&r.later.dvCost===0&&r.later.M.every(o=>o.dv===0&&o.dvc===0);add('Development OFF produces no development production or cost',ok,'Development bbl '+r.later.dvProd+', cost '+r.later.dvCost);}
+ {const r=R.sel;let md=0;for(let t=0;t<r.now.dy.price.length;t++)md=Math.max(md,Math.abs(r.now.dy.price[t]-r.later.dy.price[t]));add('Both repair alternatives share the same price curve',md===0,'Max daily price difference = '+md+' $/bbl');}
+ {const r=pair(clone(p,{deferM:0}));add('Zero-month deferral gives identical repair timing and cash flows',r.now.tRep===r.later.tRep&&r.d===0&&r.dR===0,'tRep '+r.now.tRep+' / '+r.later.tRep+'; dNPV = '+r.d+', risk-adj. '+r.dR);}
+ {const q=clone(p,{declModel:'exp'}),f=baseRateFn(q),a=f(12*DPM),b=p.Q0*Math.pow(1-p.decl/100,12),qh=clone(p,{declModel:'hyp'}),fh=baseRateFn(qh),ah=fh(12*DPM),bh=p.hypB<1e-6?p.Q0*Math.exp(-p.hypDi/100*12):p.Q0/Math.pow(1+p.hypB*p.hypDi/100*12,1/p.hypB);let mono=true;for(let t=1;t<400;t++)if(f(t)>f(t-1)+1e-9||fh(t)>fh(t-1)+1e-9)mono=false;
+  add('Production decline applied consistently',tol(a,b,1e-9)&&tol(ah,bh,1e-9)&&mono,'Exp Q(12) '+fmt2(a)+' vs Q0(1-d)^12 '+fmt2(b)+'; Hyp Q(12) '+fmt2(ah)+' vs Arps '+fmt2(bh)+'; non-increasing: '+mono);}
+ {const r=pair(clone(p,{rfOn:true,dvOn:true}),true);let e=0;[r.now,r.later].forEach(s=>s.M.forEach(o=>{e=Math.max(e,Math.abs(o.base+o.rf+o.dv-o.baseline),Math.abs(o.baseline-o.aff+o.rec-o.act));}));add('Production streams reconcile to total production',e<1e-6,'Max monthly residual (streams vs baseline; baseline - affected + recovery vs actual) = '+e.toExponential(2)+' bbl');}
+ {const r=R.sel;const s1=r.now.M.reduce((a,o)=>a+o.discR,0),s2=r.later.M.reduce((a,o)=>a+o.disc,0);add('Monthly cash flows reconcile to total NPV',tol(s1,r.now.npvR,1e-9)&&tol(s2,r.later.npv,1e-9),'Sum monthly disc. (now, risk-adj.) '+fmt2(s1)+' vs NPV '+fmt2(r.now.npvR)+'; later det. '+fmt2(s2)+' vs '+fmt2(r.later.npv));}
+ {let e=0;R.mx.forEach(m=>{const d=pair(m.q,true);e=Math.max(e,Math.abs(d.dR-m.r.dR),Math.abs(d.later.M.reduce((a,o)=>a+o.discR,0)-m.r.later.npvR));});add('Scenario matrix results match detailed cash-flow calculations',e<1e-4,'Max difference over 24 comparisons = $'+e.toExponential(2));}
+ {const G=gridCompute(p,'price','decl',3,3);let e=0;G.cells.forEach((r,j)=>r.forEach((c,i)=>{const q=clone(p,{priceAtRepair:G.xs[i],decl:G.ys[j]});if(q.declModel==='none')q.declModel='exp';if(q.declModel==='hyp')q.hypDi=-Math.log(1-G.ys[j]/100)*100;const d=pair(q,true);e=Math.max(e,Math.abs(d.later.M.reduce((a,o)=>a+o.discR,0)-d.now.M.reduce((a,o)=>a+o.discR,0)-c.dR));}));add('Decision-boundary cells match the primary engine',e<1e-4,'Max difference of 9 grid cells vs detailed monthly runs = $'+e.toExponential(2));}
+ {const b=breakEven(p,'price',20,200,25);const ok=b.roots.every(r=>r.ok);add('Break-even points satisfy dNPV ~ 0',ok,b.roots.length?'Oil-price roots: '+b.roots.map(r=>'$'+r.x.toFixed(2)+' (|dNPV| '+fmtD(Math.abs(r.f))+')').join(', '):'No sign change in $20-$200 (none reported, none fabricated)');}
+ {const c=cal(p.start,p.months),k=Math.min(6,p.months-1),tr=c.st[k]-7,q=clone(p,{deferM:tr/DPM,shutDays:14.5,laterShutDays:0}),r=sim(q,repairDay(q),true);const sd=r.M.reduce((a,o)=>a+o.shutD,0),n=r.M.filter(o=>o.shutD>0).length,daff=Array.from(r.dy.aff).reduce((a,v)=>a+v,0);
+  add('Partial-month (and partial-day) shutdowns handled correctly',Math.abs(sd-14.5)<1e-9&&n===2&&tol(daff,r.deferred,1e-9),'14.5-day shutdown starting 7 days before a month boundary: shut-in days summed '+sd+' across '+n+' months; deferred '+fmt2(r.deferred)+' bbl');}
+ {const q=clone(p,{rfOn:true,rfAffects:true,rfM:p.deferM,rfDays:10}),r=sim(q,repairDay(q),true);let ok=true,neg=0;for(let t=0;t<r.dy.aff.length;t++){if(r.dy.aff[t]>r.dy.baseline[t]+1e-9)ok=false;if(r.dy.act[t]<-1e-9)neg++;}
+  add('Overlapping shutdowns are not double-counted',ok&&neg===0,'Refrac workover overlapping the repair shutdown: affected <= baseline every day: '+ok+'; negative-production days: '+neg+'; deferred '+fmt2(r.deferred)+' bbl');}
+ {let mn=1,mx=0,smn=1,smx=0;R.mx.forEach(m=>[m.r.now,m.r.later].forEach(s=>{mn=Math.min(mn,s.pfMin,s.sMin);mx=Math.max(mx,s.pfMax,s.sMax);}));const x=sim(clone(p,{pof0:99.9,riskMode:'inc',riskEsc:500}),repairDay(p));mn=Math.min(mn,x.pfMin,x.sMin);mx=Math.max(mx,x.pfMax,x.sMax);add('Failure and survival probabilities remain in [0, 1]',mn>=0&&mx<=1,'Range over 48 cases + extreme case: ['+mn.toExponential(2)+', '+mx.toFixed(6)+']');}
+ {const cap=p.Q0*1.05,q=clone(p,{maxCap:cap,recPct:100}),r=sim(q,repairDay(q),true);let v=0;for(let t=0;t<r.dy.act.length;t++)if(r.dy.rec[t]>0&&r.dy.act[t]>Math.max(cap,r.dy.baseline[t])+1e-9)v++;add('Recovery capacity limits are enforced',v===0,'Cap '+fmt0(cap)+' bbl/d: violating days '+v+'; recovered '+fmt0(r.recovered)+' of '+fmt0(r.recoverable)+' recoverable (outstanding '+fmt0(r.outstanding)+')');}
+ {const ws=p.wDecl+p.wFlat+p.wInc,js=p.j00+p.j10+p.j01+p.j11,ok=Math.abs(ws-100)<0.01&&(p.jointMode!=='joint'||Math.abs(js-100)<0.01)&&Math.abs(R.pw.W-1)<1e-6;add('Scenario probabilities sum to 100%',ok,'Price paths '+ws.toFixed(2)+'%'+(p.jointMode==='joint'?'; joint configurations '+js.toFixed(2)+'%':'; configurations independent')+'; total weight '+(R.pw.W*100).toFixed(4)+'%');}
+ {let bad=0;R.mx.forEach(m=>[m.r.d,m.r.dR,m.r.now.npv,m.r.later.npvR,m.r.later.deferred].forEach(v=>{if(!isFinite(v))bad++;}));R.wf.steps.forEach(s=>{if(!isFinite(s[1]))bad++;});add('No NaN / Infinity outputs; inputs validated',bad===0&&R.errs.length===0,'Non-finite outputs: '+bad+'; input validation issues: '+R.errs.length+(R.errs.length?' ('+R.errs.join('; ')+')':''));}
+ {const ok=R.mx.every(m=>{const d=decide(m.r.dR,m.q,null,m.r.now.npvR),M=matThr(m.q,m.r.now.npvR);return d.tier<0||((Math.abs(m.r.dR)<M)===(d.tier===0)&&(d.tier!==2||Math.abs(m.r.dR)>=p.domMult*M));});add('Materiality tiers consistent with threshold',ok,'Equivalent if and only if |dNPV| < max(floor, % x NPV); Dominant only at >= '+p.domMult+'x');}
+ }catch(e){add('Validation run completed without exception',false,String(e));}
+ R.val={T,pass:T.filter(t=>t.ok).length,fail:T.filter(t=>!t.ok).length};
+ if(render){renderMeth();renderStatus();}
+}
+
+/* =====================================================================
+   10. METHODOLOGY TEXT
+   ===================================================================== */
+function renderMeth(){
+ const v=R.val;$('#valSum').innerHTML='<b class="'+(v.fail?'fail':'pass')+'">'+v.pass+' of '+(v.pass+v.fail)+' tests PASS</b> <span class="note">(tests run on the current inputs after every change)</span>';
+ $('#valTable').innerHTML='<thead><tr><th>#</th><th class="l">Test</th><th class="l">Result</th><th class="l">Details</th></tr></thead><tbody>'+v.T.map((t,i)=>'<tr><td>'+(i+1)+'</td><td class="l">'+esc(t.n)+'</td><td class="l '+(t.ok?'pass':'fail')+'">'+(t.ok?'PASS':'FAIL')+'</td><td class="l" style="white-space:normal">'+esc(t.det)+'</td></tr>').join('')+'</tbody>';
+ if($('#methText').dataset.done)return;$('#methText').dataset.done=1;
+ $('#methText').innerHTML=`
+<h3 style="margin-top:0">Model structure</h3>
+<p>All results come from one daily-resolution engine (<code>sim</code>). Each economic case is simulated day by day from the analysis start date (t = 0) to the end of the horizon, then aggregated to calendar months. Repair Now starts the repair shutdown on day 0; Repair Later starts it on day round(deferral months x 30.4375). The two alternatives share every other input, including the price curve.</p>
+<h3>Production decline</h3>
+<p>Time in months is m = t / 30.4375 (t in days).</p>
+<span class="f">Exponential (effective):  Q(m) = Q0 (1 - d)^m          d = effective monthly decline fraction
+Hyperbolic (Arps):        q(m) = Q0 / (1 + b Di m)^(1/b)  Di = nominal initial monthly decline, 0 &lt; b &lt;= 2
+b = 0 limit:              q(m) = Q0 exp(-Di m)            (effective d = 1 - exp(-Di))</span>
+<p>Nominal and effective rates are not interchangeable: a 2%/mo effective decline equals a nominal rate of -ln(0.98) = 2.02%/mo. Refrac and development streams use their own effective exponential declines from their start dates. Limitations: decline curves are empirical; hyperbolic b &gt; 1 can overstate late-life rates without a terminal decline.</p>
+<h3>Production deferral and recovery</h3>
+<ul><li><b>Deferred (shutdown-affected) production</b> = sum over shutdown days of the forecast rate of every stream that flows through the repaired asset (base, refrac, and development if it shares the pipeline). Partial days are pro-rated.</li>
+<li><b>Recoverable production</b> = recovery % x deferred production.</li>
+<li><b>Recovered production</b> = barrels actually produced back after restart, incremental to normal production, at a planned rate of recoverable / recovery duration, limited by the remaining recoverable volume and by the total-rate capacity cap (cap minus baseline). If the cap binds, recovery continues past the nominal window until complete or the horizon ends.</li>
+<li><b>Permanently unrecovered production</b> = deferred - recovered (= (1 - recovery %) x deferred, plus any recoverable volume still outstanding at the horizon).</li></ul>
+<p>A 14-day shutdown is not 14 days of lost production: reservoir pressure builds during shut-in and part of the deferred volume is produced afterwards as flush production. Only the unrecovered share is a true loss; the recovered share is a timing shift whose value depends on discounting and on the price when it is produced.</p>
+<h3>Oil-price forecast</h3>
+<p>Each path is defined by anchors at months 0, 12, 24 and 36 (held flat afterwards). Daily benchmark prices are interpolated linearly (or held stepwise) at m = t / 30.4375, so every barrel is priced on its actual production date. The user-defined path takes a monthly list. A dated event shifts the curve so the price on the event day equals the event price. Realized price = max(0, benchmark - differential). The price curve is a function of the scenario only, never of the repair date. For the decision-boundary charts, "oil price at deferred repair date" X replaces the path with a linear ramp from P0 at t = 0 to X at the deferral month, flat thereafter.</p>
+<h3>Refrac and development</h3>
+<p>Refrac: when enabled, an incremental stream q = Qr (1 - dr)^((t - t_end)/30.4375) begins when the refrac operation ends; if "shuts in original production" is set, base production is zero during the operation (this downtime is not recovered). Refrac capital is spent on its start day. Development: an independent stream from its start month with its own capital cost; it is interrupted by the repair shutdown only if it flows through the repaired asset. When disabled, all related production and costs are exactly zero. Deterministic rows treat ON as certain; probability weighting multiplies scenario NPVs by explicit probabilities.</p>
+<h3>Financial methodology</h3>
+<span class="f">Gross revenue  = produced bbl x realized price
+Royalty        = royalty % x revenue
+Production tax = tax % x (revenue - royalty)
+Operating cost = produced bbl x variable opex + fixed opex / days in month (every day)
+Net cash flow  = revenue - royalty - tax - opex - repair capex - refrac capex - development capex
+Netback        = price (1 - royalty)(1 - tax) - variable opex     ($/bbl)
+NPV            = sum_t CF(t) / (1 + r)^(t / 365.25)               t = elapsed days
+dNPV           = NPV(Repair Later) - NPV(Repair Now)               positive = deferral favoured</span>
+<p>Repair capex is charged on the repair start day: cost today for Repair Now; cost today x (1 + e)^(t/365.25) for Repair Later unless an override is entered. The monthly discount factor shown in the cash-flow table is the daily-weighted factor (discounted CF / CF), so monthly rows reconcile exactly to the daily NPV.</p>
+<h3>Risk-adjusted economics</h3>
+<p>Annual probabilities are converted to a constant daily hazard: h = -ln(1 - p) / 365.25, which is equivalent to p_month = 1 - (1 - p)^(1/12) per month. Before the repair the hazard may escalate as p(t) = p0 (1 + g)^(t/365.25), capped at 99.9%. While shut in the hazard is zero. After restart the hazard is that of the repaired asset, p_post = eff x p_after + (1 - eff) x p_before. Daily failure probability = 1 - exp(-h dt), and the survival function S(t) = exp(-integral h) is tracked to confirm probabilities stay in [0, 1].</p>
+<span class="f">Expected failure cost(t) = Pf(t) x [ consequence + emergency repair + cleanup + failure outage days x affected rate x netback ]
+Risk-adjusted NPV       = NPV - sum_t Expected failure cost(t) / (1 + r)^(t/365.25)</span>
+<p><b>Approximation (labelled):</b> this is an expected-loss (frequency x consequence) model rather than explicit failure-state branching. Each consequence component is counted once per failure: the emergency repair cost and the outage production loss are inside the consequence term and are not also charged as planned repair or planned shutdown, so there is no double counting. The approximation does not alter the subsequent production path after a failure (e.g., an emergency repair that would make the planned repair unnecessary), which is conservative for the deferral case when PoF is small; for large cumulative PoF the expected cost is an upper-bound style estimate. Expected value also averages rare, severe outcomes, so risk-averse decision makers should read the dNPV together with the failure probability, not instead of it.</p>
+<h3>Decision boundary methodology</h3>
+<p>Each heatmap cell is a full pair of engine runs (now and later) with two inputs overridden; the cell value is risk-adjusted dNPV. Green cells (dNPV &gt; band) favour deferral; red cells (dNPV &lt; -band) favour immediate repair; amber cells are within the indifference band. The dNPV = 0 contour is traced with marching squares and linear interpolation between computed cell centres; it is drawn only where the computed values change sign, and the chart states explicitly when no boundary exists in the plotted range. Higher failure probability raises the expected cost of waiting (pushes the boundary toward repair now); higher production decline lowers the barrels deferred by a later shutdown (favours waiting); refrac or development that raise throughput before the deferred date increase the barrels at risk in a later shutdown (favour repairing first). Break-even values come from a 49-point scan plus bisection with a verification run at each root.</p>
+<h3>Decision significance and interpretation</h3>
+<p>A dNPV is only meaningful relative to the size of what is being decided. The tool therefore tests three things before calling a preference a decision point:</p>
+<span class="f">Materiality threshold   M = max( floor $, materiality % x NPV(repair now) )
+Significance ratio      k = |risk-adjusted dNPV| / M
+Tier                    k &lt; 1 Equivalent | 1 &lt;= k &lt; dominance multiple Moderate | k &gt;= multiple Dominant
+Robust                  probability weight of the 12 price x configuration cases with a material dNPV
+                        in the same direction &gt;= robustness requirement, AND no single tornado swing
+                        produces a material dNPV in the opposite direction
+Dominant factor         waterfall component with the largest |contribution|; dominant if &gt;= 50% of the
+                        sum of |contributions|
+Production-days scale   dNPV / (baseline rate at t=0 x netback at t=0)</span>
+<p>Equivalent means the options are interchangeable on value; the choice should then be made on integrity, operations and risk appetite, and deferral is acceptable where integrity permits. Material but not robust is reported as conditional: it names the inputs that reverse it. The "what is at stake" panel separates the value of waiting (deterministic dNPV), the probability of at least one failure before the deferred repair, 1 - exp(-cumulative hazard over the deferral window), and the cost of a single failure if it happens. Expected values hide that single-event size; the tail-risk flag shows it explicitly.</p>
+<h3>Integrity and feasibility</h3>
+<p>Economic feasibility (higher risk-adjusted NPV), technical feasibility (achievable recovery rates and schedules, user flag per scenario) and integrity acceptability (maximum permissible deferral, mandatory-repair flag, integrity-prohibited flag) are reported separately. Inadmissible deferrals are never recommended and are excluded from the timing optimization; they remain visible as hypothetical outcomes.</p>
+<h3>Disclosed simplifications</h3>
+<ul><li>Months in the price and decline equations are 30.4375-day averages; reporting uses true calendar months.</li>
+<li>Recovery production is assumed to carry the same netback as normal production and does not alter the long-term decline trend.</li>
+<li>Refrac downtime is treated as unrecovered. Overlap between a refrac workover and a repair shutdown is handled by counting only barrels that would actually have flowed.</li>
+<li>Heatmaps run on the main thread in chunks; very fine resolutions take several seconds.</li></ul>`;
+}
+
+/* =====================================================================
+   11. EXPORT / IMPORT / STORAGE
+   ===================================================================== */
+function exportJSON(){dl('repair_timing_inputs.json',JSON.stringify({app:'Repair Timing Economic Analyzer',version:1,inputs:P,flags:ST.flags,names:ST.names},null,2),'application/json');}
+$('#impFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const j=JSON.parse(rd.result),inp=j.inputs||j,v=clone(DEF);Object.keys(DEF).forEach(k=>{if(inp[k]!==undefined)v[k]=inp[k];});if(j.flags)ST.flags=j.flags;if(j.names)ST.names=j.names;writeForm(v);recalc();alert('Inputs imported.');}catch(err){alert('Import failed: '+err.message);}};rd.readAsText(f);e.target.value='';});
+function savedAll(){return load('rte_saved_v1')||{};}
+function refreshSaved(){const s=savedAll();$('#savedList').innerHTML='<option value="">-- saved scenarios --</option>'+Object.keys(s).sort().map(k=>'<option>'+esc(k)+'</option>').join('');}
+function saveScenario(){const n=$('#saveName').value.trim();if(!n){alert('Enter a scenario name.');return;}const s=savedAll();s[n]=P;store('rte_saved_v1',s);refreshSaved();$('#savedList').value=n;}
+function loadScenario(){const n=$('#savedList').value,s=savedAll();if(!n||!s[n])return;writeForm(clone(DEF,s[n]));recalc();}
+function deleteScenario(){const n=$('#savedList').value,s=savedAll();if(!n)return;delete s[n];store('rte_saved_v1',s);refreshSaved();}
+function resetDefaults(){if(!confirm('Reset all inputs to defaults?'))return;writeForm(DEF);ST.flags={};ST.names={};ST.unsel={};ST.tor=TOR_DEF.map(r=>r.slice());recalc();}
+function setAllGroups(o){$$('details.grp').forEach(d=>d.open=o);}
+
+/* =====================================================================
+   12. WIRING
+   ===================================================================== */
+function init(){
+ buildForm();
+ Object.keys(VARS).forEach(k=>{['#cX','#cY'].forEach(s=>$(s).insertAdjacentHTML('beforeend','<option value="'+k+'">'+esc(VARS[k].l)+'</option>'));});
+ $('#cX').value='cost';$('#cY').value='shut';const setR=()=>{$('#cXlo').value=VARS[$('#cX').value].lo;$('#cXhi').value=VARS[$('#cX').value].hi;$('#cYlo').value=VARS[$('#cY').value].lo;$('#cYhi').value=VARS[$('#cY').value].hi;};setR();
+ $('#cX').addEventListener('change',()=>{setR();});$('#cY').addEventListener('change',()=>{setR();});
+ const st=load('rte_state_v1');
+ writeForm(st&&st.inputs?clone(DEF,st.inputs):DEF);
+ if(st){ST.flags=st.flags||{};ST.names=st.names||{};ST.unsel=st.unsel||{};ST.tor=st.tor||null;const f=st.filters||{};if(f.cfg!=null)$('#fCfg').value=f.cfg;if(f.price!=null)$('#fPrice').value=f.price;if(f.rec!=null)$('#fRec').value=f.rec;$('#fNoDecl').checked=!!f.nodecl;if(f.cfView)$('#cfView').value=f.cfView;if(f.cfRec)$('#cfRec').value=f.cfRec;}
+ if(!ST.tor||ST.tor.length!==TOR_DEF.length)ST.tor=TOR_DEF.map(r=>r.slice());
+ refreshSaved();
+ $('#formHost').addEventListener('input',schedule);$('#formHost').addEventListener('change',schedule);
+ $('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setTab(b.dataset.tab);});
+ ['#fCfg','#fPrice','#fRec'].forEach(s=>$(s).addEventListener('change',()=>{renderMatrix();persist();}));
+ $('#fNoDecl').addEventListener('change',()=>{R.nd=$('#fNoDecl').checked?buildNoDecl(P):null;renderMatrix();persist();});
+ ['#cfView','#cfRec'].forEach(s=>$(s).addEventListener('change',()=>{renderCash();persist();}));
+ $('#mxTable').addEventListener('click',e=>{const th=e.target.closest('th.s');if(th){const k=th.dataset.k;if(sortK===k)sortD=-sortD;else{sortK=k;sortD=['d','dR','now','later'].includes(k)?-1:1;}renderMatrix();return;}const a=e.target.closest('a[data-pick]');if(a){e.preventDefault();pickScenario(a.dataset.pick);}});
+ $('#mxTable').addEventListener('change',e=>{const t=e.target;if(t.dataset.sel){if(t.checked)delete ST.unsel[t.dataset.sel];else ST.unsel[t.dataset.sel]=1;renderMatrix();}else if(t.dataset.name!=null){ST.names[t.dataset.name]=t.value;}else if(t.dataset.flag){if(t.value==='ok')delete ST.flags[t.dataset.flag];else ST.flags[t.dataset.flag]=t.value;const fl=ST.flags[selId(P)];R.dec=decide(R.sel.dR,P,fl,R.sel.now.npvR);R.sig=significance(P);renderStatus();renderMatrix();}persist();});
+ $('#t-sens').addEventListener('change',e=>{const t=e.target;if(t.dataset.tor){const [i,j]=t.dataset.tor.split('|').map(Number);const v=parseFloat(t.value);if(isFinite(v)){ST.tor[i][j]=v;persist();runSens();}}else if(t.closest('.card.noprint')||['cX','cY','cXlo','cXhi','cYlo','cYhi'].includes(t.id)){if(SENS)SENS.synced=selKey(P);runSensKeep();}});
+ document.addEventListener('mousemove',e=>{const tip=$('#tip');const q=e.target.closest&&e.target.closest('[data-tip]');let html=null;if(q)html=esc(q.dataset.tip);else{const el=e.target.closest&&e.target.closest('.chart');if(el&&el._hit){const r=el.getBoundingClientRect();html=el._hit(e.clientX-r.left,e.clientY-r.top);}}
+  if(html){tip.innerHTML=html;tip.style.display='block';const w=tip.offsetWidth,h=tip.offsetHeight;let x=e.clientX+14,y=e.clientY+14;if(x+w>innerWidth-4)x=e.clientX-w-14;if(y+h>innerHeight-4)y=e.clientY-h-14;tip.style.left=Math.max(4,x)+'px';tip.style.top=Math.max(4,y)+'px';}else tip.style.display='none';});
+ let rz;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{if(ST.tab==='sens')renderSens();else renderTab(ST.tab);},150);});
+ recalc();setTab(st&&st.tab?st.tab:'inputs');
+}
+/* sensitivity control change: keep the user's tab-local overrides */
+function runSensKeep(){const keep=selKey(P);if(SENS)SENS.synced=keep;else SENS={synced:keep,stale:true};runSens();}
+window.addEventListener('beforeprint',()=>{if(ST.tab!=='dash'){}});
+init();
+</script>
+</body>
+</html>
