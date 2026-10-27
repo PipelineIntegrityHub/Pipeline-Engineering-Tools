@@ -100,9 +100,9 @@ button.dfill:hover{background:#c92a2a}
 <span class="saved" id="saved"></span>
 <button class="pri" id="add">Add project</button>
 <button id="expJson">Export JSON</button>
-<button id="impJson">Import JSON</button>
+<button id="impJson" title="Import a .json or .csv file exported from this tool">Import JSON / CSV</button>
 <button id="expCsv">Export CSV</button>
-<input type="file" id="file" accept=".json,application/json" hidden>
+<input type="file" id="file" accept=".json,.csv,application/json,text/csv" hidden>
 </header>
 <main>
 <div class="bar1">
@@ -222,12 +222,15 @@ function openProject(id,k){
   var el=k?$('t_'+k):$('detail');if(el&&el.scrollIntoView)el.scrollIntoView({behavior:'smooth',block:'start'});}
 
 var pending=null;
-function ask(msg,okLabel,fn){var c=$('cbar');pending=fn||null;
-  c.innerHTML='<span>'+esc(msg)+'</span>'+(fn?'<button class="dfill" data-c="ok">'+esc(okLabel)+'</button><button data-c="no">Cancel</button>':'<button data-c="no">OK</button>');
+var pending2=null;
+function ask(msg,okLabel,fn,alt){var c=$('cbar');pending=fn||null;pending2=alt?alt.fn:null;
+  c.innerHTML='<span>'+esc(msg)+'</span>'+(alt?'<button class="pri" data-c="alt">'+esc(alt.label)+'</button>':'')+
+    (fn?'<button class="dfill" data-c="ok">'+esc(okLabel)+'</button><button data-c="no">Cancel</button>':'<button data-c="no">OK</button>');
   c.hidden=false;var b=c.querySelector('[data-c=no]');if(b)b.focus();}
 $('cbar').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
-  var fn=pending;pending=null;$('cbar').hidden=true;if(b.getAttribute('data-c')==='ok'&&fn)fn();});
-document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!$('cbar').hidden){pending=null;$('cbar').hidden=true;}});
+  var fn=pending,fn2=pending2,k=b.getAttribute('data-c');pending=null;pending2=null;$('cbar').hidden=true;
+  if(k==='ok'&&fn)fn();else if(k==='alt'&&fn2)fn2();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!$('cbar').hidden){pending=null;pending2=null;$('cbar').hidden=true;}});
 
 /* tooltips: hover, keyboard focus, and tap */
 var tip=$('tip');
@@ -290,12 +293,55 @@ $('expCsv').addEventListener('click',function(){
     lines.push([p.name,x.k,x.n,t.on?'Yes':'No',t.on?ST[t.s]:'',t.notes,t.upd].map(c).join(','));});});
   download('projects_progress_'+today()+'.csv',lines.join('\r\n'),'text/csv');});
 $('impJson').addEventListener('click',function(){$('file').click();});
+function fromJson(txt){var d=JSON.parse(txt);if(!d||!Array.isArray(d.projects))throw new Error('No projects list in that JSON file.');
+  return {projects:d.projects.map(norm),skipped:0};}
+function parseCsv(txt){var rows=[],row=[],f='',q=false,i,c;
+  for(i=0;i<txt.length;i++){c=txt[i];
+    if(q){if(c==='"'){if(txt[i+1]==='"'){f+='"';i++;}else q=false;}else f+=c;}
+    else if(c==='"')q=true;
+    else if(c===','){row.push(f);f='';}
+    else if(c==='\n'||c==='\r'){if(c==='\r'&&txt[i+1]==='\n')i++;row.push(f);rows.push(row);row=[];f='';}
+    else f+=c;}
+  if(f!==''||row.length){row.push(f);rows.push(row);}
+  return rows.filter(function(r){return r.some(function(v){return String(v).trim()!=='';});});}
+function taskOf(v){v=String(v||'').trim().toLowerCase();if(!v)return null;
+  for(var i=0;i<TASKS.length;i++){var x=TASKS[i];
+    if(v===x.k.toLowerCase()||v===x.n.toLowerCase()||v===full(x).toLowerCase())return x.k;}
+  if(v==='kom'||v==='kick off meeting')return 'SM';
+  return null;}
+function statusOf(v){v=String(v||'').trim().toLowerCase();
+  if(/^(complete|completed|done|green|2)$/.test(v))return 2;
+  if(/^(in progress|in-progress|inprogress|wip|started|orange|1)$/.test(v))return 1;
+  return 0;}
+function fromCsv(txt){var rows=parseCsv(txt);if(rows.length<2)throw new Error('The CSV has no data rows.');
+  var hd=rows[0].map(function(h){return String(h).trim().toLowerCase();});
+  function col(){for(var i=0;i<arguments.length;i++){var j=hd.indexOf(arguments[i]);if(j>=0)return j;}return -1;}
+  var cP=col('project','project name'),cK=col('task code','code'),cT=col('task','task name'),cR=col('required'),
+      cS=col('status'),cN=col('notes','note'),cU=col('last updated','updated');
+  if(cP<0||(cK<0&&cT<0))throw new Error('Columns needed: Project and Task Code (or Task). Export a CSV from this tool to see the layout.');
+  var map={},order=[],skipped=0;
+  rows.slice(1).forEach(function(r){var name=String(r[cP]||'').trim(),k=taskOf(cK>=0?r[cK]:'')||taskOf(cT>=0?r[cT]:'');
+    if(!name||!k){skipped++;return;}
+    if(!map[name]){map[name]={name:name,tasks:{}};order.push(name);}
+    var req=cR>=0?String(r[cR]||'').trim().toLowerCase():'';
+    map[name].tasks[k]={on:!/^(no|n|false|0|n\/a|na)$/.test(req),s:cS>=0?statusOf(r[cS]):0,
+      notes:cN>=0?String(r[cN]||''):'',upd:cU>=0?String(r[cU]||'').trim():''};});
+  if(!order.length)throw new Error('No usable rows found.');
+  return {projects:order.map(function(n){var keys=Object.keys(map[n].tasks),np=norm(map[n]);np._keys=keys;return np;}),skipped:skipped};}
+function mergeIn(list){var added=0,updated=0;
+  list.forEach(function(np){var ex=null;state.projects.forEach(function(p){if(!ex&&p.name.trim().toLowerCase()===np.name.trim().toLowerCase())ex=p;});
+    var keys=np._keys||TASKS.map(function(x){return x.k;});delete np._keys;
+    if(ex){keys.forEach(function(k){ex.tasks[k]=np.tasks[k];});updated++;}else{state.projects.push(np);added++;}});
+  openId=null;save();renderAll();ask(updated+' project(s) updated, '+added+' added.');}
 $('file').addEventListener('change',function(e){
   var f=e.target.files[0];if(!f)return;var rd=new FileReader();
-  rd.onload=function(){try{var d=JSON.parse(rd.result);if(!d||!Array.isArray(d.projects))throw new Error('missing projects');
-      ask('Replace current data with '+d.projects.length+' project(s) from '+f.name+'?','Replace data',function(){
-        state={projects:d.projects.map(norm)};openId=null;save();renderAll();});}
-    catch(err){ask('Could not import that file. Use a JSON file exported from this tool.');}
+  rd.onload=function(){var txt=String(rd.result||'').replace(/^\uFEFF/,''),res;
+    try{res=/\.csv$/i.test(f.name)||!/^\s*[\[{]/.test(txt)?fromCsv(txt):fromJson(txt);}
+    catch(err){ask('Could not import '+f.name+'. '+err.message);e.target.value='';return;}
+    var note=res.skipped?' ('+res.skipped+' row(s) skipped: unknown task or missing project name)':'';
+    ask(res.projects.length+' project(s) found in '+f.name+note+'.','Replace all',function(){
+        res.projects.forEach(function(np){delete np._keys;});state={projects:res.projects};openId=null;save();renderAll();},
+      {label:'Merge by name',fn:function(){mergeIn(res.projects);}});
     e.target.value='';};
   rd.readAsText(f);});
 
